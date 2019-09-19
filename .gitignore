@@ -1,0 +1,11 @@
+build/*
+*.elf
+*.nro
+*.pfs0
+*.nso
+*.nacp
+*.nsp
+*.npdm
+img
+*.rar
+
