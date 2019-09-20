@@ -130,7 +130,6 @@ bool install()
 		printf("\x1b[31;1m*\x1b[0m Initialize proc\n");
 		consoleUpdate(NULL);
 		fsInitialize();
-		pmdmntInitialize();
 		pmshellInitialize();
 		//terminate
 		printf("\x1b[31;1m*\x1b[0m terminate\n");
@@ -141,7 +140,7 @@ bool install()
 		pmshellTerminateProcessByTitleId(0x010000000000000E);//friends
 		pmshellTerminateProcessByTitleId(0x010000000000000F);//nifm
 		pmshellTerminateProcessByTitleId(0x010000000000001E);//account
-		pmshellTerminateProcessByTitleId(0x010000000000001F);//ns
+//		pmshellTerminateProcessByTitleId(0x010000000000001F);//ns
 		pmshellTerminateProcessByTitleId(0x0100000000000020);//nfc
 		pmshellTerminateProcessByTitleId(0x0100000000000022);//capsrv
 		pmshellTerminateProcessByTitleId(0x0100000000000024);//ssl
@@ -155,7 +154,7 @@ bool install()
 		pmshellTerminateProcessByTitleId(0x010000000000003A);//migration
 		pmshellTerminateProcessByTitleId(0x010000000000003E);//olsc
 //		pmshellTerminateProcessByTitleId(0x0100000000001000);//qlaunch
-		pmshellTerminateProcessByTitleId(0x0100000000001009);//miiEdit
+//		pmshellTerminateProcessByTitleId(0x0100000000001009);//miiEdit
 		
 		//mount system
 		printf("\x1b[31;1m*\x1b[0m mount system\n");
@@ -166,7 +165,7 @@ bool install()
 		//delete system
 		printf("\x1b[31;1m*\x1b[0m delete system\n");
 		consoleUpdate(NULL);
-		DeleteDir("myssytem:/save");
+//		DeleteDir("myssytem:/save");
 		DeleteDir("myssytem:/saveMeta");
 		//umount system
 		printf("\x1b[31;1m*\x1b[0m umount system\n");
@@ -200,7 +199,6 @@ bool install()
 		//exit proc
 		printf("\x1b[31;1m*\x1b[0m exit proc\n");
 		consoleUpdate(NULL);
-		pmdmntExit();
 		pmshellExit();
 		fsExit();
 		
@@ -209,26 +207,14 @@ bool install()
 			bpcInitialize();
 			bpcShutdownSystem();
 			bpcExit();
-		
-/*
-	if(isSpanish())
-	printf("Estas seguro de que deseas borrar tu informacion personal del prodinfo?\n");
-	else
-	printf("Are you sure you want erase your personal information from prodinfo?\n");
-	if (!confirm())
-	{
-//		return end();
-	}
-
-	return true;*/
-return 0;
+		return 0;
 }
 
 int main(int argc, char **argv)
 {
 appletBeginBlockingHomeButton(0);
 
-	u64 count = 1000;//kill time
+	u64 count = 300;//kill time
 	while (appletMainLoop())
 	{
 		hidScanInput();
@@ -255,14 +241,14 @@ appletBeginBlockingHomeButton(0);
 					printf("\n\x1b[30;1m SE REALIZARA UN HARD RESET EN BREVE LUEGO SE APAGARA LA CONSOLA \x1b[0m\n");
 					printf("\n\n\x1b[30;1m-------- LO DEVORARE TODO --------\x1b[0m\n\n");
 					printf("PULSA + PARA CANSELAR\n\n");
-					printf("\x1b[31;1m*\x1b[0m CUENTA ATRAS-%u\n",count);
+					printf("\x1b[31;1m*\x1b[0m CUENTA ATRAS-%u\n",count/100);
 				}else{
 					printf("\n\x1b[30;1m YOUR CONSOLE WILL BE COMPLETELY CLEANED: SAVES, GAMES, ETC  \x1b[0m\n");
 					printf("\n\x1b[30;1m IF YOU DON'T KNOW WHAT YOU DO, PRESS + NOW \x1b[0m\n");
 					printf("\n\x1b[30;1m A HARD RESET WILL BE PERFORMED IN BRIEF AFTER THE CONSOLE WILL BE OFF \x1b[0m\n");
 					printf("\n\n\x1b[30;1m-------- I WILL CONSUME EVERYTHING --------\x1b[0m\n\n");
 					printf("PRESS + TO CANCEL\n\n");
-					printf("\x1b[31;1m*\x1b[0m COUNTDOWN-%u\n",count);
+					printf("\x1b[31;1m*\x1b[0m COUNTDOWN-%u\n",count/100);
 				}
 		consoleUpdate(NULL);
 	}
@@ -273,6 +259,10 @@ appletBeginBlockingHomeButton(0);
     socketExit();
     fsdevUnmountAll();
 	appletEndBlockingHomeButton();
+	pmshellInitialize();
+	pmshellTerminateProcessByTitleId(0x05229B5E9D160000);//haku33
+	pmshellTerminateProcessByTitleId(0x0104444444441001);//haku33
+	pmshellExit();
 	while (appletMainLoop())
 	{
 		consoleInit(NULL);
