@@ -20,8 +20,7 @@
 #include <sys/socket.h>
 #include <cstring>
 #include <vector>
-
-#include <sys/stat.h>
+#include <stdlib.h>
 
 using namespace std;
 
@@ -122,17 +121,56 @@ bool fileExists(const char* path)
 		closedir(d);
 	}
 
+	
+bool led_on(void)
+{
+			Result rc=0;
+				size_t i;
+				size_t total_entries;
+				u64 UniquePadIds[2];
+				HidsysNotificationLedPattern pattern;
+				hidsysExit();
+				rc = hidsysInitialize();
+				if (R_FAILED(rc)) {
+					printf("hidsysInitialize(): 0x%x\n", rc);
+				}
+
+
+				memset(&pattern, 0, sizeof(pattern));
+				// Setup Breathing effect pattern data.
+				pattern.baseMiniCycleDuration = 0x8;             // 100ms.
+				pattern.totalMiniCycles = 0x2;                   // 3 mini cycles. Last one 12.5ms.
+				pattern.totalFullCycles = 0x0;                   // Repeat forever.
+				pattern.startIntensity = 0x2;                    // 13%.
+
+				pattern.miniCycles[0].ledIntensity = 0xF;        // 100%.
+				pattern.miniCycles[0].transitionSteps = 0xF;     // 15 steps. Transition time 1.5s.
+				pattern.miniCycles[0].finalStepDuration = 0x0;   // Forced 12.5ms.
+				pattern.miniCycles[1].ledIntensity = 0x2;        // 13%.
+				pattern.miniCycles[1].transitionSteps = 0xF;     // 15 steps. Transition time 1.5s.
+				pattern.miniCycles[1].finalStepDuration = 0x0;   // Forced 12.5ms.
+				
+				rc = hidsysGetUniquePadsFromNpad(hidGetHandheldMode() ? CONTROLLER_HANDHELD : CONTROLLER_PLAYER_1, UniquePadIds, 2, &total_entries);
+
+				if (R_SUCCEEDED(rc)) {
+					for(i=0; i<total_entries; i++) { // System will skip sending the subcommand to controllers where this isn't available.
+						rc = hidsysSetNotificationLedPattern(&pattern, UniquePadIds[i]);
+					}
+				}
+			hidsysExit();
+return 0;
+}
 
 bool install()
 {
-	consoleUpdate(NULL);
 		//Initialize proc
-		printf("\x1b[31;1m*\x1b[0m Initialize proc\n");
+		printf("\x1b[32;1m*\x1b[0m Initialize proc\n");
 		consoleUpdate(NULL);
 		fsInitialize();
+		pmdmntInitialize();
 		pmshellInitialize();
 		//terminate
-		printf("\x1b[31;1m*\x1b[0m terminate\n");
+		printf("\x1b[32;1m*\x1b[0m terminate\n");
 		consoleUpdate(NULL);
 		pmshellTerminateProcessByTitleId(0x010000000000000C);//btca	
 		pmshellTerminateProcessByTitleId(0x0100000000000009);//settings
@@ -155,34 +193,40 @@ bool install()
 		pmshellTerminateProcessByTitleId(0x010000000000003E);//olsc
 //		pmshellTerminateProcessByTitleId(0x0100000000001000);//qlaunch
 //		pmshellTerminateProcessByTitleId(0x0100000000001009);//miiEdit
-		
+	
 		//mount system
-		printf("\x1b[31;1m*\x1b[0m mount system\n");
+		printf("\x1b[32;1m*\x1b[0m mount system\n");
 		consoleUpdate(NULL);
 		FsFileSystem mySystem;
+		printf("\x1b[32;1m*\x1b[0m mount system 1\n");
+		consoleUpdate(NULL);
 		fsOpenBisFileSystem(&mySystem, FsBisStorageId_System, "");
+		printf("\x1b[32;1m*\x1b[0m mount system 2\n");
+		consoleUpdate(NULL);
 		fsdevMountDevice("myssytem", mySystem);
+		printf("\x1b[32;1m*\x1b[0m mount system 3\n");
+		consoleUpdate(NULL);
 		//delete system
-		printf("\x1b[31;1m*\x1b[0m delete system\n");
+		printf("\x1b[32;1m*\x1b[0m delete system 4\n");
 		consoleUpdate(NULL);
 //		DeleteDir("myssytem:/save");
 		DeleteDir("myssytem:/saveMeta");
 		//umount system
-		printf("\x1b[31;1m*\x1b[0m umount system\n");
+		printf("\x1b[32;1m*\x1b[0m umount system\n");
 		consoleUpdate(NULL);
 		fsdevCommitDevice("myssytem");
 		fsdevUnmountDevice("myssytem");
 		fsFsClose(&mySystem);
 		
 		//mount user
-		printf("\x1b[31;1m*\x1b[0m mount User\n");
+		printf("\x1b[32;1m*\x1b[0m mount User\n");
 		consoleUpdate(NULL);
 		FsFileSystem myUser;
 		fsOpenBisFileSystem(&myUser, FsBisStorageId_User, "");
 		fsdevMountDevice("myUser", myUser);
 		
 		//delete user
-		printf("\x1b[31;1m*\x1b[0m delete User\n");
+		printf("\x1b[32;1m*\x1b[0m delete User\n");
 		consoleUpdate(NULL);
 		DeleteDir("myUser:/Contents/registered");
 		DeleteDir("myUser:/Contents");
@@ -190,31 +234,32 @@ bool install()
 		DeleteDir("myUser:/save");
 		
 		//umount user
-		printf("\x1b[31;1m*\x1b[0m umount User\n");
+		printf("\x1b[32;1m*\x1b[0m umount User\n");
 		consoleUpdate(NULL);
 		fsdevCommitDevice("myUser");
 		fsdevUnmountDevice("myUser");
 		fsFsClose(&myUser);
 		
 		//exit proc
-		printf("\x1b[31;1m*\x1b[0m exit proc\n");
+		printf("\x1b[32;1m*\x1b[0m exit proc\n");
 		consoleUpdate(NULL);
+		pmdmntExit();
 		pmshellExit();
 		fsExit();
-		
-		printf("\x1b[31;1m*\x1b[0m power off\n");
+led_on();	
+		printf("\x1b[32;1m*\x1b[0m power off\n");
 		consoleUpdate(NULL);
 			bpcInitialize();
 			bpcShutdownSystem();
 			bpcExit();
-		return 0;
+		
+return 0;
 }
 
 int main(int argc, char **argv)
 {
 appletBeginBlockingHomeButton(0);
-
-	u64 count = 300;//kill time
+	u64 count = 800;//kill time
 	while (appletMainLoop())
 	{
 		hidScanInput();
@@ -239,22 +284,19 @@ appletBeginBlockingHomeButton(0);
 					printf("\n\x1b[30;1m TU CONSOLA SERA COMPLETAMENTE LIMPADA: SAVES, JUEGOS, ETC  \x1b[0m\n");
 					printf("\n\x1b[30;1m SI NO SABES LO QUE HACES, PRESIONA + RAPIDO \x1b[0m\n");
 					printf("\n\x1b[30;1m SE REALIZARA UN HARD RESET EN BREVE LUEGO SE APAGARA LA CONSOLA \x1b[0m\n");
-					printf("\n\n\x1b[30;1m-------- LO DEVORARE TODO --------\x1b[0m\n\n");
+					printf("\n\n\x1b[3%u;1m-------- LO DEVORARE TODO --------\x1b[0m\n\n",count/100);
 					printf("PULSA + PARA CANSELAR\n\n");
-					printf("\x1b[31;1m*\x1b[0m CUENTA ATRAS-%u\n",count/100);
+					printf("\x1b[36m*\x1b[0m CUENTA ATRAS-%u\n",count/100);
 				}else{
 					printf("\n\x1b[30;1m YOUR CONSOLE WILL BE COMPLETELY CLEANED: SAVES, GAMES, ETC  \x1b[0m\n");
 					printf("\n\x1b[30;1m IF YOU DON'T KNOW WHAT YOU DO, PRESS + NOW \x1b[0m\n");
 					printf("\n\x1b[30;1m A HARD RESET WILL BE PERFORMED IN BRIEF AFTER THE CONSOLE WILL BE OFF \x1b[0m\n");
-					printf("\n\n\x1b[30;1m-------- I WILL CONSUME EVERYTHING --------\x1b[0m\n\n");
+					printf("\n\n\x1b[3%u;1m-------- I WILL CONSUME EVERYTHING --------\x1b[0m\n\n",count/100);
 					printf("PRESS + TO CANCEL\n\n");
-					printf("\x1b[31;1m*\x1b[0m COUNTDOWN-%u\n",count/100);
+					printf("\x1b[36;1m*\x1b[0m COUNTDOWN-%u\n",count/100);
 				}
 		consoleUpdate(NULL);
 	}
-
-	
-
 
     socketExit();
     fsdevUnmountAll();
@@ -262,9 +304,10 @@ appletBeginBlockingHomeButton(0);
 	pmshellInitialize();
 	pmshellTerminateProcessByTitleId(0x05229B5E9D160000);//haku33
 	pmshellTerminateProcessByTitleId(0x0104444444441001);//haku33
-	pmshellExit();
 	while (appletMainLoop())
 	{
+		hidScanInput();
+		u64 keys = hidKeysDown(CONTROLLER_P1_AUTO);
 		consoleInit(NULL);
 		printf("\x1b[32;1m*\x1b[0m %s v%s Kronos2308, Hard Reset\n",TITLE, VERSION);
 				if(isSpanish())
@@ -273,10 +316,11 @@ appletBeginBlockingHomeButton(0);
 				}else{
 					printf("\n\x1b[30;1m PRESS HOME TO EXIT \x1b[0m\n");
 				}
+		if (keys & KEY_PLUS)
+		break;
 		consoleUpdate(NULL);
-	}
 
-	
+	}
 	consoleExit(NULL);
 	return 0;
 }
