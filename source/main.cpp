@@ -209,7 +209,7 @@ bool install()
 		//delete system
 		printf("\x1b[32;1m*\x1b[0m delete system 4\n");
 		consoleUpdate(NULL);
-//		DeleteDir("myssytem:/save");
+		DeleteDir("myssytem:/save");
 		DeleteDir("myssytem:/saveMeta");
 		//umount system
 		printf("\x1b[32;1m*\x1b[0m umount system\n");
