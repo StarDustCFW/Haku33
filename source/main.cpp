@@ -178,7 +178,7 @@ bool install()
 		pmshellTerminateProcessByTitleId(0x010000000000000E);//friends
 		pmshellTerminateProcessByTitleId(0x010000000000000F);//nifm
 		pmshellTerminateProcessByTitleId(0x010000000000001E);//account
-//		pmshellTerminateProcessByTitleId(0x010000000000001F);//ns
+		pmshellTerminateProcessByTitleId(0x010000000000001F);//ns
 		pmshellTerminateProcessByTitleId(0x0100000000000020);//nfc
 		pmshellTerminateProcessByTitleId(0x0100000000000022);//capsrv
 		pmshellTerminateProcessByTitleId(0x0100000000000024);//ssl
@@ -192,23 +192,15 @@ bool install()
 		pmshellTerminateProcessByTitleId(0x010000000000003A);//migration
 		pmshellTerminateProcessByTitleId(0x010000000000003E);//olsc
 //		pmshellTerminateProcessByTitleId(0x0100000000001000);//qlaunch
-//		pmshellTerminateProcessByTitleId(0x0100000000001009);//miiEdit
+		pmshellTerminateProcessByTitleId(0x0100000000001009);//miiEdit
 	
 		//mount system
 		printf("\x1b[32;1m*\x1b[0m mount system\n");
 		consoleUpdate(NULL);
 		FsFileSystem mySystem;
-		printf("\x1b[32;1m*\x1b[0m mount system 1\n");
-		consoleUpdate(NULL);
 		fsOpenBisFileSystem(&mySystem, FsBisStorageId_System, "");
-		printf("\x1b[32;1m*\x1b[0m mount system 2\n");
-		consoleUpdate(NULL);
 		fsdevMountDevice("myssytem", mySystem);
-		printf("\x1b[32;1m*\x1b[0m mount system 3\n");
-		consoleUpdate(NULL);
 		//delete system
-		printf("\x1b[32;1m*\x1b[0m delete system 4\n");
-		consoleUpdate(NULL);
 		DeleteDir("myssytem:/save");
 		DeleteDir("myssytem:/saveMeta");
 		//umount system
