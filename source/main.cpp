@@ -169,8 +169,36 @@ bool install()
 		fsInitialize();
 		pmdmntInitialize();
 		pmshellInitialize();
-		//terminate
-		printf("\x1b[32;1m*\x1b[0m terminate\n");
+	
+		//mount user
+		printf("\x1b[32;1m*\x1b[0m mount User\n");
+		consoleUpdate(NULL);
+		FsFileSystem myUser;
+		fsOpenBisFileSystem(&myUser, FsBisStorageId_User, "");
+		fsdevMountDevice("myUser", myUser);
+		//delete user
+		printf("\x1b[32;1m*\x1b[0m delete User\n");
+		consoleUpdate(NULL);
+		DeleteDir("myUser:/Contents/registered");
+		DeleteDir("myUser:/Contents");
+		DeleteDir("myUser:/saveMeta");
+		DeleteDir("myUser:/save");
+		//umount user
+		printf("\x1b[32;1m*\x1b[0m umount User\n");
+		consoleUpdate(NULL);
+		fsdevCommitDevice("myUser");
+		fsdevUnmountDevice("myUser");
+		fsFsClose(&myUser);
+
+		//mount system
+		printf("\x1b[32;1m*\x1b[0m mount system\n");
+		consoleUpdate(NULL);
+		FsFileSystem mySystem;
+		fsOpenBisFileSystem(&mySystem, FsBisStorageId_System, "");
+		fsdevMountDevice("myssytem", mySystem);
+		
+		//terminate System proc
+		printf("\x1b[32;1m*\x1b[0m terminate System proc\n");
 		consoleUpdate(NULL);
 		pmshellTerminateProcessByTitleId(0x010000000000000C);//btca	
 		pmshellTerminateProcessByTitleId(0x0100000000000009);//settings
@@ -193,14 +221,10 @@ bool install()
 		pmshellTerminateProcessByTitleId(0x010000000000003E);//olsc
 //		pmshellTerminateProcessByTitleId(0x0100000000001000);//qlaunch
 		pmshellTerminateProcessByTitleId(0x0100000000001009);//miiEdit
-	
-		//mount system
-		printf("\x1b[32;1m*\x1b[0m mount system\n");
-		consoleUpdate(NULL);
-		FsFileSystem mySystem;
-		fsOpenBisFileSystem(&mySystem, FsBisStorageId_System, "");
-		fsdevMountDevice("myssytem", mySystem);
+
 		//delete system
+		printf("\x1b[32;1m*\x1b[0m delete system\n");
+		consoleUpdate(NULL);
 		DeleteDir("myssytem:/save");
 		DeleteDir("myssytem:/saveMeta");
 		//umount system
@@ -210,27 +234,7 @@ bool install()
 		fsdevUnmountDevice("myssytem");
 		fsFsClose(&mySystem);
 		
-		//mount user
-		printf("\x1b[32;1m*\x1b[0m mount User\n");
-		consoleUpdate(NULL);
-		FsFileSystem myUser;
-		fsOpenBisFileSystem(&myUser, FsBisStorageId_User, "");
-		fsdevMountDevice("myUser", myUser);
-		
-		//delete user
-		printf("\x1b[32;1m*\x1b[0m delete User\n");
-		consoleUpdate(NULL);
-		DeleteDir("myUser:/Contents/registered");
-		DeleteDir("myUser:/Contents");
-		DeleteDir("myUser:/saveMeta");
-		DeleteDir("myUser:/save");
-		
-		//umount user
-		printf("\x1b[32;1m*\x1b[0m umount User\n");
-		consoleUpdate(NULL);
-		fsdevCommitDevice("myUser");
-		fsdevUnmountDevice("myUser");
-		fsFsClose(&myUser);
+
 		
 		//exit proc
 		printf("\x1b[32;1m*\x1b[0m exit proc\n");
