@@ -12,3 +12,7 @@ Perform a hard reset of the switch, and leave it as if it had just left the fact
 * devkitPro for the devkitA64 toolchain.
 
 * And special thanks to Rumba the retrogamer_74 dog
+
+### Known Bugs
+* Freezes in sxos if FTP is enabled
+- - It froze if airplane mode was activated, fixed in 1.4
