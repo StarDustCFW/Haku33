@@ -161,6 +161,15 @@ bool led_on(void)
 return 0;
 }
 
+bool HasConnection()
+{
+	u32 strg = 0;
+	nifmInitialize();
+    nifmGetInternetConnectionStatus(NULL, &strg, NULL);
+	nifmExit();
+    return (strg > 0);
+}
+
 bool install()
 {
 		//Initialize proc
@@ -190,21 +199,12 @@ bool install()
 		fsdevUnmountDevice("myUser");
 		fsFsClose(&myUser);
 
-		//mount system
-		printf("\x1b[32;1m*\x1b[0m mount system\n");
-		consoleUpdate(NULL);
-		FsFileSystem mySystem;
-		fsOpenBisFileSystem(&mySystem, FsBisStorageId_System, "");
-		fsdevMountDevice("myssytem", mySystem);
 		
 		//terminate System proc
 		printf("\x1b[32;1m*\x1b[0m terminate System proc\n");
 		consoleUpdate(NULL);
 		pmshellTerminateProcessByTitleId(0x010000000000000C);//btca	
-		pmshellTerminateProcessByTitleId(0x0100000000000009);//settings
-		pmshellTerminateProcessByTitleId(0x0100000000000012);//bsdsockets
 		pmshellTerminateProcessByTitleId(0x010000000000000E);//friends
-		pmshellTerminateProcessByTitleId(0x010000000000000F);//nifm
 		pmshellTerminateProcessByTitleId(0x010000000000001E);//account
 		pmshellTerminateProcessByTitleId(0x010000000000001F);//ns
 		pmshellTerminateProcessByTitleId(0x0100000000000020);//nfc
@@ -219,13 +219,27 @@ bool install()
 		pmshellTerminateProcessByTitleId(0x0100000000000036);//creport
 		pmshellTerminateProcessByTitleId(0x010000000000003A);//migration
 		pmshellTerminateProcessByTitleId(0x010000000000003E);//olsc
-//		pmshellTerminateProcessByTitleId(0x0100000000001000);//qlaunch
+		pmshellTerminateProcessByTitleId(0x0100000000001000);//qlaunch - make freeze?
 		pmshellTerminateProcessByTitleId(0x0100000000001009);//miiEdit
+		
+		//mount system
+		printf("\x1b[32;1m*\x1b[0m mount system\n");
+		consoleUpdate(NULL);
+		FsFileSystem mySystem;
+		fsOpenBisFileSystem(&mySystem, FsBisStorageId_System, "");
+		fsdevMountDevice("myssytem", mySystem);
+		
+		//critical serv 
+		printf("\x1b[31;1m*\x1b[0m Turn off sxos ftp for evoid freeze\n");
+		pmshellTerminateProcessByTitleId(0x0100000000000012);//bsdsockets - make switch freeze on sxos ftp
+		if(HasConnection())//detect airplane mode for evoid freeze
+		pmshellTerminateProcessByTitleId(0x0100000000000009);//settings - make switch freeze on airplane mode
+		pmshellTerminateProcessByTitleId(0x010000000000000F);//nifm
 
 		//delete system
 		printf("\x1b[32;1m*\x1b[0m delete system\n");
 		consoleUpdate(NULL);
-		DeleteDir("myssytem:/save");
+		DeleteDir("myssytem:/save");//perform the hard reset
 		DeleteDir("myssytem:/saveMeta");
 		//umount system
 		printf("\x1b[32;1m*\x1b[0m umount system\n");
@@ -234,21 +248,21 @@ bool install()
 		fsdevUnmountDevice("myssytem");
 		fsFsClose(&mySystem);
 		
-
-		
 		//exit proc
 		printf("\x1b[32;1m*\x1b[0m exit proc\n");
 		consoleUpdate(NULL);
 		pmdmntExit();
 		pmshellExit();
 		fsExit();
+		socketExit();
+		fsdevUnmountAll();
 led_on();	
 		printf("\x1b[32;1m*\x1b[0m power off\n");
 		consoleUpdate(NULL);
 			bpcInitialize();
 			bpcShutdownSystem();
+//			bpcRebootSystem();
 			bpcExit();
-		
 return 0;
 }
 
@@ -269,7 +283,7 @@ appletBeginBlockingHomeButton(0);
 		if (count <= 0)
 		{
 		install();
-			break;
+		break;
 		}
 		
 		count--;
@@ -293,13 +307,16 @@ appletBeginBlockingHomeButton(0);
 				}
 		consoleUpdate(NULL);
 	}
-
+	
+	//cansel
+	fsExit();
     socketExit();
     fsdevUnmountAll();
 	appletEndBlockingHomeButton();
 	pmshellInitialize();
 	pmshellTerminateProcessByTitleId(0x05229B5E9D160000);//haku33
 	pmshellTerminateProcessByTitleId(0x0104444444441001);//haku33
+	pmshellExit();
 	while (appletMainLoop())
 	{
 		hidScanInput();
@@ -315,7 +332,6 @@ appletBeginBlockingHomeButton(0);
 		if (keys & KEY_PLUS)
 		break;
 		consoleUpdate(NULL);
-
 	}
 	consoleExit(NULL);
 	return 0;
