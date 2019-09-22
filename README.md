@@ -1,11 +1,15 @@
 ## Haku33
-Perform a hard reset of the switch, and leave it as if it had just left the factory 
+Perform a Hard Reset of the switch, and leave it as if it had just left the factory 
 
 ## Reason
 * In case you don't have a clean copy of the nand, clean it and start using all original or use emunand
 
 ## Disclaimer
-* Always have a nand backup.
+* It is advisable to make a backup before using it, since despite being well tested failures can occur
+* The premise is elimination. Can it be the lack of info that makes you get banned? so far the case has not occurred
+* True that it is not 100% safe but the people who have tested it have not yet been banned
+* If you have a clean backup of the Nand it is better that, and under no circumstances use in switch Patches
+* If your console is Banned there is nothing to do
 * This will completely clean your switch so you will lose everything
 
 ### Credits
