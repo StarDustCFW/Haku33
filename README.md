@@ -20,3 +20,5 @@ Perform a Hard Reset of the switch, and leave it as if it had just left the fact
 ### Known Bugs
 * Freezes in sxos if FTP is enabled
 - - It froze if airplane mode was activated, fixed in 1.4
+
+[Demostration video](https://youtu.be/X1VpT3DwN-E)
