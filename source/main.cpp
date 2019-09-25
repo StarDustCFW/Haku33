@@ -172,32 +172,13 @@ bool HasConnection()
 
 bool install()
 {
+		printf("\x1b[31;1m*\x1b[0m Turn off sxos ftp for evoid freeze\n");
 		//Initialize proc
 		printf("\x1b[32;1m*\x1b[0m Initialize proc\n");
 		consoleUpdate(NULL);
 		fsInitialize();
 		pmdmntInitialize();
 		pmshellInitialize();
-	
-		//mount user
-		printf("\x1b[32;1m*\x1b[0m mount User\n");
-		consoleUpdate(NULL);
-		FsFileSystem myUser;
-		fsOpenBisFileSystem(&myUser, FsBisStorageId_User, "");
-		fsdevMountDevice("myUser", myUser);
-		//delete user
-		printf("\x1b[32;1m*\x1b[0m delete User\n");
-		consoleUpdate(NULL);
-		DeleteDir("myUser:/Contents/registered");
-		DeleteDir("myUser:/Contents");
-		DeleteDir("myUser:/saveMeta");
-		DeleteDir("myUser:/save");
-		//umount user
-		printf("\x1b[32;1m*\x1b[0m umount User\n");
-		consoleUpdate(NULL);
-		fsdevCommitDevice("myUser");
-		fsdevUnmountDevice("myUser");
-		fsFsClose(&myUser);
 
 		
 		//terminate System proc
@@ -222,22 +203,22 @@ bool install()
 		pmshellTerminateProcessByTitleId(0x0100000000001000);//qlaunch - make freeze?
 		pmshellTerminateProcessByTitleId(0x0100000000001009);//miiEdit
 		
+		//critical serv 
+		pmshellTerminateProcessByTitleId(0x0100000000000012);//bsdsockets - make switch freeze on sxos ftp
+		if(HasConnection())//detect airplane mode for evoid freeze
+		pmshellTerminateProcessByTitleId(0x0100000000000009);//settings - make switch freeze on airplane mode
+		else
+		printf("\x1b[31;1m*\x1b[0m Disable Airplane mode\n");
+		pmshellTerminateProcessByTitleId(0x010000000000000F);//nifm
+
 		//mount system
 		printf("\x1b[32;1m*\x1b[0m mount system\n");
 		consoleUpdate(NULL);
 		FsFileSystem mySystem;
 		fsOpenBisFileSystem(&mySystem, FsBisStorageId_System, "");
 		fsdevMountDevice("myssytem", mySystem);
-		
-		//critical serv 
-		printf("\x1b[31;1m*\x1b[0m Turn off sxos ftp for evoid freeze\n");
-		pmshellTerminateProcessByTitleId(0x0100000000000012);//bsdsockets - make switch freeze on sxos ftp
-		if(HasConnection())//detect airplane mode for evoid freeze
-		pmshellTerminateProcessByTitleId(0x0100000000000009);//settings - make switch freeze on airplane mode
-		pmshellTerminateProcessByTitleId(0x010000000000000F);//nifm
-
 		//delete system
-		printf("\x1b[32;1m*\x1b[0m delete system\n");
+		printf("\x1b[32;1m*\x1b[0m Delete system\n");
 		consoleUpdate(NULL);
 		DeleteDir("myssytem:/save");//perform the hard reset
 		DeleteDir("myssytem:/saveMeta");
@@ -247,7 +228,28 @@ bool install()
 		fsdevCommitDevice("myssytem");
 		fsdevUnmountDevice("myssytem");
 		fsFsClose(&mySystem);
+
 		
+		//mount user
+		printf("\x1b[32;1m*\x1b[0m mount User\n");
+		consoleUpdate(NULL);
+		FsFileSystem myUser;
+		fsOpenBisFileSystem(&myUser, FsBisStorageId_User, "");
+		fsdevMountDevice("myUser", myUser);
+		//delete user
+		printf("\x1b[32;1m*\x1b[0m delete User\n");
+		consoleUpdate(NULL);
+		DeleteDir("myUser:/Contents/registered");
+		DeleteDir("myUser:/Contents");
+		DeleteDir("myUser:/saveMeta");
+		DeleteDir("myUser:/save");
+		//umount user
+		printf("\x1b[32;1m*\x1b[0m umount User\n");
+		consoleUpdate(NULL);
+		fsdevCommitDevice("myUser");
+		fsdevUnmountDevice("myUser");
+		fsFsClose(&myUser);
+
 		//exit proc
 		printf("\x1b[32;1m*\x1b[0m exit proc\n");
 		consoleUpdate(NULL);
@@ -270,6 +272,11 @@ int main(int argc, char **argv)
 {
 appletBeginBlockingHomeButton(0);
 	u64 count = 800;//kill time
+	if(!HasConnection()){//detect airplane mode for evoid freeze
+	char *Airplane = true;
+	count = 1500
+	}else{
+	char *Airplane = false;}
 	while (appletMainLoop())
 	{
 		hidScanInput();
@@ -296,6 +303,8 @@ appletBeginBlockingHomeButton(0);
 					printf("\n\x1b[30;1m SE REALIZARA UN HARD RESET EN BREVE LUEGO SE APAGARA LA CONSOLA \x1b[0m\n");
 					printf("\n\n\x1b[3%u;1m-------- LO DEVORARE TODO --------\x1b[0m\n\n",count/100);
 					printf("PULSA + PARA CANSELAR\n\n");
+					if(Airplane)//detect airplane mode for evoid freeze
+					printf("\x1b[31;1m*\x1b[0m Desactiva el Modo Avion usar DNS (Recomendado)\n163.172.141.219\n45.248.48.62\n");
 					printf("\x1b[36m*\x1b[0m CUENTA ATRAS-%u\n",count/100);
 				}else{
 					printf("\n\x1b[30;1m YOUR CONSOLE WILL BE COMPLETELY CLEANED: SAVES, GAMES, ETC  \x1b[0m\n");
@@ -303,6 +312,8 @@ appletBeginBlockingHomeButton(0);
 					printf("\n\x1b[30;1m A HARD RESET WILL BE PERFORMED IN BRIEF AFTER THE CONSOLE WILL BE OFF \x1b[0m\n");
 					printf("\n\n\x1b[3%u;1m-------- I WILL CONSUME EVERYTHING --------\x1b[0m\n\n",count/100);
 					printf("PRESS + TO CANCEL\n\n");
+					if(Airplane)//detect airplane mode for evoid freeze
+					printf("\x1b[31;1m*\x1b[0m Disable Airplane mode use dns(Recomended)\n163.172.141.219\n45.248.48.62\n");
 					printf("\x1b[36;1m*\x1b[0m COUNTDOWN-%u\n",count/100);
 				}
 		consoleUpdate(NULL);
