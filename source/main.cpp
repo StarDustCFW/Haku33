@@ -46,6 +46,22 @@ bool isSpanish()
 		return false;
 }
 
+//ask to the switch for the serial detect incognito
+bool incognito(void) {
+	setInitialize();
+    setsysInitialize();
+	Result ret = 0;
+	static char serial[0x19];
+	if (R_FAILED(ret = setsysGetSerialNumber(serial)))
+	printf("setsysGetSerialNumber() failed: 0x%x.\n\n", ret);
+	setsysExit();
+		if(strlen(serial) == 0)
+		return true;
+	
+	return false;
+}
+
+
 bool fileExists(const char* path)
 {
 	FILE* f = fopen(path, "rb");
@@ -172,7 +188,6 @@ bool HasConnection()
 
 bool install()
 {
-		printf("\x1b[31;1m*\x1b[0m Turn off sxos ftp for evoid freeze\n");
 		//Initialize proc
 		printf("\x1b[32;1m*\x1b[0m Initialize proc\n");
 		consoleUpdate(NULL);
@@ -203,6 +218,20 @@ bool install()
 		pmshellTerminateProcessByTitleId(0x0100000000001000);//qlaunch - make freeze?
 		pmshellTerminateProcessByTitleId(0x0100000000001009);//miiEdit
 		
+		//serv test may freeze
+		pmshellTerminateProcessByTitleId(0x0100000000000020); //nfc
+		pmshellTerminateProcessByTitleId(0x0100000000000021); //psc
+//		pmshellTerminateProcessByTitleId(0x0100000000000023); //am
+		pmshellTerminateProcessByTitleId(0x0100000000000024); //ssl
+		pmshellTerminateProcessByTitleId(0x010000000000002E); //pctl
+		pmshellTerminateProcessByTitleId(0x010000000000002F); //npns
+		pmshellTerminateProcessByTitleId(0x0100000000000034); //fatal
+		pmshellTerminateProcessByTitleId(0x0100000000000037); //ro
+		pmshellTerminateProcessByTitleId(0x0100000000000039); //sdb
+		pmshellTerminateProcessByTitleId(0x010000000000003E); //olsc
+		pmshellTerminateProcessByTitleId(0x0100000000002071); //posi (ns)
+		pmshellTerminateProcessByTitleId(0x0100000000000809); //used by sdb
+		
 		//critical serv 
 		pmshellTerminateProcessByTitleId(0x0100000000000012);//bsdsockets - make switch freeze on sxos ftp
 		if(HasConnection())//detect airplane mode for evoid freeze
@@ -210,7 +239,10 @@ bool install()
 		else
 		printf("\x1b[31;1m*\x1b[0m Disable Airplane mode\n");
 		pmshellTerminateProcessByTitleId(0x010000000000000F);//nifm
-
+		pmshellTerminateProcessByTitleId(0x0100000000000016);//Wlan
+		
+		
+		
 		//mount system
 		printf("\x1b[32;1m*\x1b[0m mount system\n");
 		consoleUpdate(NULL);
@@ -271,12 +303,13 @@ return 0;
 int main(int argc, char **argv)
 {
 appletBeginBlockingHomeButton(0);
+	bool Airplane = true;
 	u64 count = 800;//kill time
-	if(!HasConnection()){//detect airplane mode for evoid freeze
-	char *Airplane = true;
-	count = 1500
+	if(!HasConnection()){//detect airplane mode for evoid freeze //!
+	Airplane = true;
+	count = 2000;
 	}else{
-	char *Airplane = false;}
+	Airplane = false;}
 	while (appletMainLoop())
 	{
 		hidScanInput();
@@ -303,8 +336,11 @@ appletBeginBlockingHomeButton(0);
 					printf("\n\x1b[30;1m SE REALIZARA UN HARD RESET EN BREVE LUEGO SE APAGARA LA CONSOLA \x1b[0m\n");
 					printf("\n\n\x1b[3%u;1m-------- LO DEVORARE TODO --------\x1b[0m\n\n",count/100);
 					printf("PULSA + PARA CANSELAR\n\n");
+					if(incognito)//detect incognito
+					printf("\x1b[31;1m*\x1b[0m Desinstala Incognito (Requerido)\n\n");
 					if(Airplane)//detect airplane mode for evoid freeze
-					printf("\x1b[31;1m*\x1b[0m Desactiva el Modo Avion usar DNS (Recomendado)\n163.172.141.219\n45.248.48.62\n");
+					printf("\x1b[31;1m*\x1b[0m Desactiva el Modo Avion usar DNS (Recomendado)\n\n\x1b[33;1m*\x1b[0m DNS Primario: 163.172.141.219\n\n\x1b[33;1m*\x1b[0m DNS Secundario: 45.248.48.62\n\n");
+					printf("\x1b[33;1m*\x1b[0m Apagar el FTP de sxos(Recomendado)\n\n");
 					printf("\x1b[36m*\x1b[0m CUENTA ATRAS-%u\n",count/100);
 				}else{
 					printf("\n\x1b[30;1m YOUR CONSOLE WILL BE COMPLETELY CLEANED: SAVES, GAMES, ETC  \x1b[0m\n");
@@ -312,8 +348,11 @@ appletBeginBlockingHomeButton(0);
 					printf("\n\x1b[30;1m A HARD RESET WILL BE PERFORMED IN BRIEF AFTER THE CONSOLE WILL BE OFF \x1b[0m\n");
 					printf("\n\n\x1b[3%u;1m-------- I WILL CONSUME EVERYTHING --------\x1b[0m\n\n",count/100);
 					printf("PRESS + TO CANCEL\n\n");
+					if(incognito)//detect incognito
+					printf("\x1b[31;1m*\x1b[0m Uninstall Incognito (Required)\n\n");
 					if(Airplane)//detect airplane mode for evoid freeze
-					printf("\x1b[31;1m*\x1b[0m Disable Airplane mode use dns(Recomended)\n163.172.141.219\n45.248.48.62\n");
+					printf("\x1b[31;1m*\x1b[0m Disable Airplane mode use dns(Recomended)\n\n\x1b[32;1m*\x1b[0m Primary DNS: 163.172.141.219\n\n\x1b[32;1m*\x1b[0m Secondary DNS: 45.248.48.62\n\n");
+					printf("\x1b[33;1m*\x1b[0m Turn off sxos ftp for evoid freeze(Recomended)\n\n");
 					printf("\x1b[36;1m*\x1b[0m COUNTDOWN-%u\n",count/100);
 				}
 		consoleUpdate(NULL);
