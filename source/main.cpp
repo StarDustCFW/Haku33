@@ -47,7 +47,7 @@ bool isSpanish()
 }
 
 //ask to the switch for the serial detect incognito
-bool incognito(void) {
+char *incognito(void) {
 	setInitialize();
     setsysInitialize();
 	Result ret = 0;
@@ -55,10 +55,7 @@ bool incognito(void) {
 	if (R_FAILED(ret = setsysGetSerialNumber(serial)))
 	printf("setsysGetSerialNumber() failed: 0x%x.\n\n", ret);
 	setsysExit();
-		if(strlen(serial) == 0)
-		return true;
-	
-	return false;
+	return serial;
 }
 
 
@@ -304,7 +301,7 @@ int main(int argc, char **argv)
 {
 appletBeginBlockingHomeButton(0);
 	bool Airplane = true;
-	u64 count = 800;//kill time
+	u64 count = 1000;//kill time
 	if(!HasConnection()){//detect airplane mode for evoid freeze //!
 	Airplane = true;
 	count = 2000;
@@ -336,10 +333,10 @@ appletBeginBlockingHomeButton(0);
 					printf("\n\x1b[30;1m SE REALIZARA UN HARD RESET EN BREVE LUEGO SE APAGARA LA CONSOLA \x1b[0m\n");
 					printf("\n\n\x1b[3%u;1m-------- LO DEVORARE TODO --------\x1b[0m\n\n",count/100);
 					printf("PULSA + PARA CANSELAR\n\n");
-					if(incognito)//detect incognito
-					printf("\x1b[31;1m*\x1b[0m Desinstala Incognito (Requerido)\n\n");
+					if(strlen(incognito()) == 0)//detect incognito
+					printf("\x1b[31;1m*\x1b[0m Desinstala Incognito %s(Requerido)\n\n",incognito());
 					if(Airplane)//detect airplane mode for evoid freeze
-					printf("\x1b[31;1m*\x1b[0m Desactiva el Modo Avion usar DNS (Recomendado)\n\n\x1b[33;1m*\x1b[0m DNS Primario: 163.172.141.219\n\n\x1b[33;1m*\x1b[0m DNS Secundario: 45.248.48.62\n\n");
+					printf("\x1b[31;1m*\x1b[0m Desactiva el Modo Avion usar DNS (Requerido)\n\n\x1b[33;1m*\x1b[0m DNS Primario: 163.172.141.219\n\n\x1b[33;1m*\x1b[0m DNS Secundario: 45.248.48.62\n\n");
 					printf("\x1b[33;1m*\x1b[0m Apagar el FTP de sxos(Recomendado)\n\n");
 					printf("\x1b[36m*\x1b[0m CUENTA ATRAS-%u\n",count/100);
 				}else{
@@ -348,16 +345,16 @@ appletBeginBlockingHomeButton(0);
 					printf("\n\x1b[30;1m A HARD RESET WILL BE PERFORMED IN BRIEF AFTER THE CONSOLE WILL BE OFF \x1b[0m\n");
 					printf("\n\n\x1b[3%u;1m-------- I WILL CONSUME EVERYTHING --------\x1b[0m\n\n",count/100);
 					printf("PRESS + TO CANCEL\n\n");
-					if(incognito)//detect incognito
+					if(strlen(incognito()) == 0)//detect incognito
 					printf("\x1b[31;1m*\x1b[0m Uninstall Incognito (Required)\n\n");
 					if(Airplane)//detect airplane mode for evoid freeze
-					printf("\x1b[31;1m*\x1b[0m Disable Airplane mode use dns(Recomended)\n\n\x1b[32;1m*\x1b[0m Primary DNS: 163.172.141.219\n\n\x1b[32;1m*\x1b[0m Secondary DNS: 45.248.48.62\n\n");
+					printf("\x1b[31;1m*\x1b[0m Disable Airplane mode use dns(Required)\n\n\x1b[32;1m*\x1b[0m Primary DNS: 163.172.141.219\n\n\x1b[32;1m*\x1b[0m Secondary DNS: 45.248.48.62\n\n");
 					printf("\x1b[33;1m*\x1b[0m Turn off sxos ftp for evoid freeze(Recomended)\n\n");
 					printf("\x1b[36;1m*\x1b[0m COUNTDOWN-%u\n",count/100);
 				}
 		consoleUpdate(NULL);
 	}
-	
+
 	//cansel
 	fsExit();
     socketExit();
