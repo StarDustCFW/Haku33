@@ -1,7 +1,7 @@
 <a href="https://discord.io/myrincon"><img src="https://discordapp.com/api/guilds/516631805621960704/embed.png" alt="Discord Server" /></a>
 
 ## Haku33
-Perform a Hard Reset of the switch, and leave it as if it had just left the factory 
+Perform a Hard Reset of the switch, and leave it as if it had just left the factory
 
 ## Reason
 * In case you don't have a clean copy of the nand, clean it and start using all original or use emunand
@@ -22,5 +22,8 @@ Perform a Hard Reset of the switch, and leave it as if it had just left the fact
 ### Known Bugs
 * Freezes in sxos if FTP is enabled
 - - It froze if airplane mode was activated, fixed in 1.4
+* 1.6 may freeze 
 
-[Demostration video](https://youtu.be/X1VpT3DwN-E)
+<a href="https://discord.io/myrincon"><img src="icon.jpg" alt="Discord Server" /></a>
+
+# [Demostration video](https://youtu.be/X1VpT3DwN-E)
