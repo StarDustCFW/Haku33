@@ -191,10 +191,9 @@ bool install()
 		fsInitialize();
 		pmdmntInitialize();
 		pmshellInitialize();
-
 		
 		//terminate System proc
-		printf("\x1b[32;1m*\x1b[0m terminate System proc\n");
+		printf("\x1b[32;1m*\x1b[0m Kill System Services\n");
 		consoleUpdate(NULL);
 		pmshellTerminateProcessByTitleId(0x010000000000000C);//btca	
 		pmshellTerminateProcessByTitleId(0x010000000000000E);//friends
@@ -216,29 +215,40 @@ bool install()
 		pmshellTerminateProcessByTitleId(0x0100000000001009);//miiEdit
 		
 		//serv test may freeze
-		pmshellTerminateProcessByTitleId(0x0100000000000020); //nfc
+		printf("\x1b[32;1m*\x1b[0m Kill Extra Services\n");
+		consoleUpdate(NULL);
+/*		pmshellTerminateProcessByTitleId(0x0100000000000020); //nfc
 		pmshellTerminateProcessByTitleId(0x0100000000000021); //psc
-//		pmshellTerminateProcessByTitleId(0x0100000000000023); //am
+//		pmshellTerminateProcessByTitleId(0x0100000000000023); //am    make freeze
 		pmshellTerminateProcessByTitleId(0x0100000000000024); //ssl
 		pmshellTerminateProcessByTitleId(0x010000000000002E); //pctl
 		pmshellTerminateProcessByTitleId(0x010000000000002F); //npns
 		pmshellTerminateProcessByTitleId(0x0100000000000034); //fatal
-		pmshellTerminateProcessByTitleId(0x0100000000000037); //ro
+//		pmshellTerminateProcessByTitleId(0x0100000000000037); //ro   make freeze
 		pmshellTerminateProcessByTitleId(0x0100000000000039); //sdb
 		pmshellTerminateProcessByTitleId(0x010000000000003E); //olsc
-		pmshellTerminateProcessByTitleId(0x0100000000002071); //posi (ns)
+*/		pmshellTerminateProcessByTitleId(0x0100000000002071); //posi (ns)
 		pmshellTerminateProcessByTitleId(0x0100000000000809); //used by sdb
 		
 		//critical serv 
+		printf("\x1b[32;1m*\x1b[0m terminate Critical Services\n");
+		consoleUpdate(NULL);
 		pmshellTerminateProcessByTitleId(0x0100000000000012);//bsdsockets - make switch freeze on sxos ftp
-		if(HasConnection())//detect airplane mode for evoid freeze
 		pmshellTerminateProcessByTitleId(0x0100000000000009);//settings - make switch freeze on airplane mode
-		else
-		printf("\x1b[31;1m*\x1b[0m Disable Airplane mode\n");
 		pmshellTerminateProcessByTitleId(0x010000000000000F);//nifm
 		pmshellTerminateProcessByTitleId(0x0100000000000016);//Wlan
-		
-		
+	
+		//terminate Homebrew Serv
+		printf("\x1b[32;1m*\x1b[0m Kill Homebrew Services\n");
+		consoleUpdate(NULL);
+		pmshellTerminateProcessByTitleId(0x420000000000000E);//FTP
+		pmshellTerminateProcessByTitleId(0x0100000000000352);//Emuiio
+		pmshellTerminateProcessByTitleId(0x200000000000010);//Lan Play
+		pmshellTerminateProcessByTitleId(0x0100000000000FAF);//HDI
+		pmshellTerminateProcessByTitleId(0x420000000000000B);//sysplay
+		pmshellTerminateProcessByTitleId(0x00FF0000636C6BFF);//sys-clk
+		pmshellTerminateProcessByTitleId(0x0100000000534C56);//ReverseNX
+		pmshellTerminateProcessByTitleId(0x0100000000000069);//ReiSpoof
 		
 		//mount system
 		printf("\x1b[32;1m*\x1b[0m mount system\n");
@@ -337,7 +347,7 @@ appletBeginBlockingHomeButton(0);
 					printf("\x1b[31;1m*\x1b[0m Desinstala Incognito %s(Requerido)\n\n",incognito());
 					if(Airplane)//detect airplane mode for evoid freeze
 					printf("\x1b[31;1m*\x1b[0m Desactiva el Modo Avion usar DNS (Requerido)\n\n\x1b[33;1m*\x1b[0m DNS Primario: 163.172.141.219\n\n\x1b[33;1m*\x1b[0m DNS Secundario: 45.248.48.62\n\n");
-					printf("\x1b[33;1m*\x1b[0m Apagar el FTP de sxos(Recomendado)\n\n");
+					printf("\x1b[33;1m*\x1b[0m Si lo tienes activo, Apaga el FTP de sxos\n\n");
 					printf("\x1b[36m*\x1b[0m CUENTA ATRAS-%u\n",count/100);
 				}else{
 					printf("\n\x1b[30;1m YOUR CONSOLE WILL BE COMPLETELY CLEANED: SAVES, GAMES, ETC  \x1b[0m\n");
@@ -349,7 +359,7 @@ appletBeginBlockingHomeButton(0);
 					printf("\x1b[31;1m*\x1b[0m Uninstall Incognito (Required)\n\n");
 					if(Airplane)//detect airplane mode for evoid freeze
 					printf("\x1b[31;1m*\x1b[0m Disable Airplane mode use dns(Required)\n\n\x1b[32;1m*\x1b[0m Primary DNS: 163.172.141.219\n\n\x1b[32;1m*\x1b[0m Secondary DNS: 45.248.48.62\n\n");
-					printf("\x1b[33;1m*\x1b[0m Turn off sxos ftp for evoid freeze(Recomended)\n\n");
+					printf("\x1b[33;1m*\x1b[0m If you have it active, Turn off FTP sxos\n\n");
 					printf("\x1b[36;1m*\x1b[0m COUNTDOWN-%u\n",count/100);
 				}
 		consoleUpdate(NULL);
