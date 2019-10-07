@@ -24,6 +24,6 @@ Perform a Hard Reset of the switch, and leave it as if it had just left the fact
 - - It froze if airplane mode was activated, fixed in 1.4
 * 1.6 may freeze 
 
-<a href="https://discord.io/myrincon"><img src="icon.jpg" alt="Discord Server" /></a>
+<a href="https://discord.io/myrincon"><img src="iconf.jpg" alt="Discord Server" /></a>
 
 # [Demostration video](https://youtu.be/X1VpT3DwN-E)
