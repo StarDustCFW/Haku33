@@ -309,87 +309,82 @@ return 0;
 
 int main(int argc, char **argv)
 {
-appletBeginBlockingHomeButton(0);
-	bool Airplane = true;
-	u64 count = 1000;//kill time
-	if(!HasConnection()){//detect airplane mode for evoid freeze //!
-	Airplane = true;
-	count = 2000;
-	}else{
-	Airplane = false;}
+	//keys
+	u32 minus = 0;
+	u32 more = 0;
+	u32 LT = 0;
+	u32 RT = 0;
 	while (appletMainLoop())
 	{
-		hidScanInput();
-		u64 keys = hidKeysDown(CONTROLLER_P1_AUTO);
-		
-		if (keys & KEY_PLUS)
-		{
-		break;
-		}
 
-		if (count <= 0)
-		{
-		install();
-		break;
-		}
+	    hidScanInput();
+        u64 kDown = hidKeysDown(CONTROLLER_P1_AUTO);
+        u64 kHeld = hidKeysHeld(CONTROLLER_P1_AUTO);
 		
-		count--;
+	minus = 0;
+	more = 0;
+	LT = 0;
+	RT = 0;
+if (kHeld & KEY_ZL)
+	LT = 2;
+if (kHeld & KEY_ZR)
+	RT = 2;
+if (kHeld & KEY_MINUS)
+	minus = 2;
+if (kHeld & KEY_PLUS)
+	more = 2;
+
 		consoleInit(NULL);
 			printf("\x1b[32;1m*\x1b[0m %s v%s Kronos2308, Hard Reset\n",TITLE, VERSION);
 				if(isSpanish())
 				{
 					printf("\n\x1b[30;1m TU CONSOLA SERA COMPLETAMENTE LIMPADA: SAVES, JUEGOS, ETC  \x1b[0m\n");
-					printf("\n\x1b[30;1m SI NO SABES LO QUE HACES, PRESIONA + RAPIDO \x1b[0m\n");
-					printf("\n\x1b[30;1m SE REALIZARA UN HARD RESET EN BREVE LUEGO SE APAGARA LA CONSOLA \x1b[0m\n");
-					printf("\n\n\x1b[3%u;1m-------- LO DEVORARE TODO --------\x1b[0m\n\n",count/100);
-					printf("PULSA + PARA CANSELAR\n\n");
+					printf("\n\x1b[30;1m SE REALIZARA UN HARD RESET LUEGO SE APAGARA LA CONSOLA \x1b[0m\n");
+					printf("\n\x1b[30;1m SI NO SABES LO QUE HACES, PRESIONA B PARA ABORTAR \x1b[0m\n");
+					printf("\n\n\x1b[30;1m-------- LO DEVORARE TODO --------\x1b[0m\n\n");
+					printf("PULSA \x1b[3%u;1m -\x1b[3%u;1m +\x1b[3%u;1m ZR\x1b[3%u;1m ZL \x1b[0m PARA LIMPIAR\n\n",minus,more,RT,LT);
 					if(strlen(incognito()) == 0)//detect incognito
 					printf("\x1b[31;1m*\x1b[0m Desinstala Incognito %s(Requerido)\n\n",incognito());
-					if(Airplane)//detect airplane mode for evoid freeze
+					if(!HasConnection())//detect airplane mode for evoid freeze
 					printf("\x1b[31;1m*\x1b[0m Desactiva el Modo Avion usar DNS (Requerido)\n\n\x1b[33;1m*\x1b[0m DNS Primario: 163.172.141.219\n\n\x1b[33;1m*\x1b[0m DNS Secundario: 45.248.48.62\n\n");
+				if(fileExists("license.dat"))
 					printf("\x1b[33;1m*\x1b[0m Si lo tienes activo, Apaga el FTP de sxos\n\n");
-					printf("\x1b[36m*\x1b[0m CUENTA ATRAS-%u\n",count/100);
+
 				}else{
 					printf("\n\x1b[30;1m YOUR CONSOLE WILL BE COMPLETELY CLEANED: SAVES, GAMES, ETC  \x1b[0m\n");
-					printf("\n\x1b[30;1m IF YOU DON'T KNOW WHAT YOU DO, PRESS + NOW \x1b[0m\n");
-					printf("\n\x1b[30;1m A HARD RESET WILL BE PERFORMED IN BRIEF AFTER THE CONSOLE WILL BE OFF \x1b[0m\n");
-					printf("\n\n\x1b[3%u;1m-------- I WILL CONSUME EVERYTHING --------\x1b[0m\n\n",count/100);
-					printf("PRESS + TO CANCEL\n\n");
+					printf("\n\x1b[30;1m A HARD RESET WILL BE PERFORMED AFTER THE CONSOLE WILL BE OFF \x1b[0m\n");
+					printf("\n\x1b[30;1m IF YOU DON'T KNOW WHAT YOU DO, PRESS B FOR ABORT \x1b[0m\n");
+					printf("\n\n\x1b[30;1m-------- I WILL CONSUME EVERYTHING --------\x1b[0m\n\n");
+					printf("PRESS - + ZR ZL TO CLEAN\n\n");
 					if(strlen(incognito()) == 0)//detect incognito
 					printf("\x1b[31;1m*\x1b[0m Uninstall Incognito (Required)\n\n");
-					if(Airplane)//detect airplane mode for evoid freeze
+					if(!HasConnection())//detect airplane mode for evoid freeze
 					printf("\x1b[31;1m*\x1b[0m Disable Airplane mode use dns(Required)\n\n\x1b[32;1m*\x1b[0m Primary DNS: 163.172.141.219\n\n\x1b[32;1m*\x1b[0m Secondary DNS: 45.248.48.62\n\n");
+				if(fileExists("license.dat"))
 					printf("\x1b[33;1m*\x1b[0m If you have it active, Turn off FTP sxos\n\n");
-					printf("\x1b[36;1m*\x1b[0m COUNTDOWN-%u\n",count/100);
+
 				}
 		consoleUpdate(NULL);
-	}
+		
+		
+		if ((kDown & KEY_ZL || kDown & KEY_ZR || kDown & KEY_MINUS || kDown & KEY_PLUS) && (kHeld & KEY_ZL && kHeld & KEY_ZR && kHeld & KEY_MINUS && kHeld & KEY_PLUS))
+		{
+			install();
+			break;
+		}
+
+		if (kDown & KEY_A || kDown & KEY_B || kDown & KEY_Y || kDown & KEY_X)
+		{
+			break;
+		}
+	}	
+
 
 	//cansel
 	fsExit();
     socketExit();
     fsdevUnmountAll();
-	appletEndBlockingHomeButton();
-	pmshellInitialize();
-	pmshellTerminateProcessByTitleId(0x05229B5E9D160000);//haku33
-	pmshellTerminateProcessByTitleId(0x0104444444441001);//haku33
 	pmshellExit();
-	while (appletMainLoop())
-	{
-		hidScanInput();
-		u64 keys = hidKeysDown(CONTROLLER_P1_AUTO);
-		consoleInit(NULL);
-		printf("\x1b[32;1m*\x1b[0m %s v%s Kronos2308, Hard Reset\n",TITLE, VERSION);
-				if(isSpanish())
-				{
-					printf("\n\x1b[30;1m PRESIONE HOME PARA SALIR \x1b[0m\n");
-				}else{
-					printf("\n\x1b[30;1m PRESS HOME TO EXIT \x1b[0m\n");
-				}
-		if (keys & KEY_PLUS)
-		break;
-		consoleUpdate(NULL);
-	}
 	consoleExit(NULL);
 	return 0;
 }
