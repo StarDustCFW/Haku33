@@ -346,7 +346,7 @@ if (kHeld & KEY_PLUS)
 					if(strlen(incognito()) == 0)//detect incognito
 					printf("\x1b[31;1m*\x1b[0m Desinstala Incognito %s(Requerido)\n\n",incognito());
 					if(!HasConnection())//detect airplane mode for evoid freeze
-					printf("\x1b[31;1m*\x1b[0m Desactiva el Modo Avion usar DNS (Requerido)\n\n\x1b[33;1m*\x1b[0m DNS Primario: 163.172.141.219\n\n\x1b[33;1m*\x1b[0m DNS Secundario: 45.248.48.62\n\n");
+					printf("\x1b[31;1m*\x1b[0m Desactiva el Modo Avion usar DNS (Requerido)\n\n\x1b[33;1m*\x1b[0m DNS Primario: 163.172.141.219\n\n\x1b[33;1m*\x1b[0m DNS Secundario: 207.246.121.77\n\n");
 				if(fileExists("license.dat"))
 					printf("\x1b[33;1m*\x1b[0m Si lo tienes activo, Apaga el FTP de sxos\n\n");
 
@@ -359,7 +359,7 @@ if (kHeld & KEY_PLUS)
 					if(strlen(incognito()) == 0)//detect incognito
 					printf("\x1b[31;1m*\x1b[0m Uninstall Incognito (Required)\n\n");
 					if(!HasConnection())//detect airplane mode for evoid freeze
-					printf("\x1b[31;1m*\x1b[0m Disable Airplane mode use dns(Required)\n\n\x1b[32;1m*\x1b[0m Primary DNS: 163.172.141.219\n\n\x1b[32;1m*\x1b[0m Secondary DNS: 45.248.48.62\n\n");
+					printf("\x1b[31;1m*\x1b[0m Disable Airplane mode use dns(Required)\n\n\x1b[32;1m*\x1b[0m Primary DNS: 163.172.141.219\n\n\x1b[32;1m*\x1b[0m Secondary DNS: 207.246.121.77\n\n");
 				if(fileExists("license.dat"))
 					printf("\x1b[33;1m*\x1b[0m If you have it active, Turn off FTP sxos\n\n");
 
