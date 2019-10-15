@@ -22,6 +22,10 @@
 #include <vector>
 #include <stdlib.h>
 
+extern "C" {
+#include "reboot.h"
+}
+
 using namespace std;
 
 //traduction
@@ -59,16 +63,16 @@ char *incognito(void) {
 }
 
 
-bool fileExists(const char* path)
-{
-	FILE* f = fopen(path, "rb");
-	if (f)
+	bool fileExists(const char* path)
 	{
-		fclose(f);
-		return true;
+		FILE* f = fopen(path, "rb");
+		if (f)
+		{
+			fclose(f);
+			return true;
+		}
+		return false;
 	}
-	return false;
-}
 
 	bool IsExist(std::string Path) 
 	{
@@ -135,53 +139,53 @@ bool fileExists(const char* path)
 	}
 
 	
-bool led_on(void)
-{
-			Result rc=0;
-				size_t i;
-				size_t total_entries;
-				u64 UniquePadIds[2];
-				HidsysNotificationLedPattern pattern;
-				hidsysExit();
-				rc = hidsysInitialize();
-				if (R_FAILED(rc)) {
-					printf("hidsysInitialize(): 0x%x\n", rc);
-				}
-
-
-				memset(&pattern, 0, sizeof(pattern));
-				// Setup Breathing effect pattern data.
-				pattern.baseMiniCycleDuration = 0x8;             // 100ms.
-				pattern.totalMiniCycles = 0x2;                   // 3 mini cycles. Last one 12.5ms.
-				pattern.totalFullCycles = 0x0;                   // Repeat forever.
-				pattern.startIntensity = 0x2;                    // 13%.
-
-				pattern.miniCycles[0].ledIntensity = 0xF;        // 100%.
-				pattern.miniCycles[0].transitionSteps = 0xF;     // 15 steps. Transition time 1.5s.
-				pattern.miniCycles[0].finalStepDuration = 0x0;   // Forced 12.5ms.
-				pattern.miniCycles[1].ledIntensity = 0x2;        // 13%.
-				pattern.miniCycles[1].transitionSteps = 0xF;     // 15 steps. Transition time 1.5s.
-				pattern.miniCycles[1].finalStepDuration = 0x0;   // Forced 12.5ms.
-				
-				rc = hidsysGetUniquePadsFromNpad(hidGetHandheldMode() ? CONTROLLER_HANDHELD : CONTROLLER_PLAYER_1, UniquePadIds, 2, &total_entries);
-
-				if (R_SUCCEEDED(rc)) {
-					for(i=0; i<total_entries; i++) { // System will skip sending the subcommand to controllers where this isn't available.
-						rc = hidsysSetNotificationLedPattern(&pattern, UniquePadIds[i]);
+	bool led_on(void)
+	{
+				Result rc=0;
+					size_t i;
+					size_t total_entries;
+					u64 UniquePadIds[2];
+					HidsysNotificationLedPattern pattern;
+					hidsysExit();
+					rc = hidsysInitialize();
+					if (R_FAILED(rc)) {
+						printf("hidsysInitialize(): 0x%x\n", rc);
 					}
-				}
-			hidsysExit();
-return 0;
-}
 
-bool HasConnection()
-{
-	u32 strg = 0;
-	nifmInitialize();
-    nifmGetInternetConnectionStatus(NULL, &strg, NULL);
-	nifmExit();
-    return (strg > 0);
-}
+
+					memset(&pattern, 0, sizeof(pattern));
+					// Setup Breathing effect pattern data.
+					pattern.baseMiniCycleDuration = 0x8;             // 100ms.
+					pattern.totalMiniCycles = 0x2;                   // 3 mini cycles. Last one 12.5ms.
+					pattern.totalFullCycles = 0x0;                   // Repeat forever.
+					pattern.startIntensity = 0x2;                    // 13%.
+
+					pattern.miniCycles[0].ledIntensity = 0xF;        // 100%.
+					pattern.miniCycles[0].transitionSteps = 0xF;     // 15 steps. Transition time 1.5s.
+					pattern.miniCycles[0].finalStepDuration = 0x0;   // Forced 12.5ms.
+					pattern.miniCycles[1].ledIntensity = 0x2;        // 13%.
+					pattern.miniCycles[1].transitionSteps = 0xF;     // 15 steps. Transition time 1.5s.
+					pattern.miniCycles[1].finalStepDuration = 0x0;   // Forced 12.5ms.
+					
+					rc = hidsysGetUniquePadsFromNpad(hidGetHandheldMode() ? CONTROLLER_HANDHELD : CONTROLLER_PLAYER_1, UniquePadIds, 2, &total_entries);
+
+					if (R_SUCCEEDED(rc)) {
+						for(i=0; i<total_entries; i++) { // System will skip sending the subcommand to controllers where this isn't available.
+							rc = hidsysSetNotificationLedPattern(&pattern, UniquePadIds[i]);
+						}
+					}
+				hidsysExit();
+	return 0;
+	}
+
+	bool HasConnection()
+	{
+		u32 strg = 0;
+		nifmInitialize();
+		nifmGetInternetConnectionStatus(NULL, &strg, NULL);
+		nifmExit();
+		return (strg > 0);
+	}
 
 bool install()
 {
@@ -298,10 +302,15 @@ bool install()
 		socketExit();
 		fsdevUnmountAll();
 led_on();	
-		printf("\x1b[32;1m*\x1b[0m power off\n");
-		consoleUpdate(NULL);
 			bpcInitialize();
-			bpcShutdownSystem();
+			if(init_slp())
+			{
+				reboot_to_payload();
+			}
+			else
+			{
+				bpcShutdownSystem();
+			}
 //			bpcRebootSystem();
 			bpcExit();
 return 0;
@@ -309,7 +318,10 @@ return 0;
 
 int main(int argc, char **argv)
 {
-	//keys
+		//romfs
+		romfsInit();
+
+		//keys
 	u32 minus = 0;
 	u32 more = 0;
 	u32 LT = 0;
@@ -342,12 +354,12 @@ if (kHeld & KEY_PLUS)
 					printf("\n\x1b[30;1m SE REALIZARA UN HARD RESET LUEGO SE APAGARA LA CONSOLA \x1b[0m\n");
 					printf("\n\x1b[30;1m SI NO SABES LO QUE HACES, PRESIONA B PARA ABORTAR \x1b[0m\n");
 					printf("\n\n\x1b[30;1m-------- LO DEVORARE TODO --------\x1b[0m\n\n");
-					printf("PULSA \x1b[3%u;1m -\x1b[3%u;1m +\x1b[3%u;1m ZR\x1b[3%u;1m ZL \x1b[0m PARA LIMPIAR\n\n",minus,more,RT,LT);
+					printf("\x1b[30;1m PULSA \x1b[3%u;1m -\x1b[3%u;1m +\x1b[3%u;1m ZR\x1b[3%u;1m ZL \x1b[0m \x1b[30;1m PARA LIMPIAR\n\n",minus,more,RT,LT);
 					if(strlen(incognito()) == 0)//detect incognito
 					printf("\x1b[31;1m*\x1b[0m Desinstala Incognito %s(Requerido)\n\n",incognito());
 					if(!HasConnection())//detect airplane mode for evoid freeze
-					printf("\x1b[31;1m*\x1b[0m Desactiva el Modo Avion usar 90DNS (Requerido)\n\n\x1b[33;1m*\x1b[0m DNS Primario: 163.172.141.219\n\n\x1b[33;1m*\x1b[0m DNS Secundario: 207.246.121.77\n\n");
-				if(fileExists("license.dat"))
+					printf("\x1b[31;1m*\x1b[0m Desactiva el Modo Avion usar las 90DNS (Requerido)\n\n\x1b[33;1m*\x1b[0m DNS Primario: 163.172.141.219\n\n\x1b[33;1m*\x1b[0m DNS Secundario: 207.246.121.77\n\n");
+					if(fileExists("license.dat"))
 					printf("\x1b[33;1m*\x1b[0m Si lo tienes activo, Apaga el FTP de sxos\n\n");
 
 				}else{

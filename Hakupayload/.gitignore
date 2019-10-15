@@ -1,0 +1,9 @@
+# Visual Studio Code
+.vs/
+.vscode/
+
+# Build files
+build/
+output/
+*.bin
+*.rar
