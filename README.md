@@ -14,11 +14,11 @@ Perform a Hard Reset of the switch, and leave it as if it had just left the fact
 * If your console is Banned there is nothing to do
 * This will completely clean your switch so you will lose everything
 ### Note:
-Keep in mind that this program will not UNBAN you, nor will it make you immune to BAN
-You will have a console as just out of the box that's it
-So you can go online as long as you keep the console clean of cfw 
-* * It is a program that temporarily stops critical console services
-So if it freezes, you should heed the warnings on the screen before asking for support
+Keep in mind that this program will not UNBAN you, nor will it make you immune to BAN.
+You will have a console as just out of the box that's it.
+So you can go online as long as you keep the console clean of cfw .
+* * It is a program that temporarily stops critical console services.
+So if it freezes, you should heed the warnings on the screen before asking for support.
 * * It is extremely rare that your console get Brick even if the program fails, press 15s the Power will be enough
 * * Although it has not been the case of Brick, I recommend having a backup of the nand for security reasons
 
