@@ -182,7 +182,7 @@ void ipl_main()
 
 //Blank ,0xFF00FF22,0xFFCCCCCC verde 
 //gfx_render_splash(&g_gfx_ctxt, (u8*)sd_file_read("StarDust/background.bmp"));
-		gfx_printf(&g_gfx_con, "%k*%k Haku33 v2.0 Kronos2308, Hard Reset\n\n",0xFF00FF22,0xFFCCCCCC);
+		gfx_printf(&g_gfx_con, "%k*%k Haku33 v2.1 Kronos2308, Hard Reset\n\n",0xFF00FF22,0xFFCCCCCC);
 		gfx_printf(&g_gfx_con, "%k TU CONSOLA SERA COMPLETAMENTE LIMPADA: SAVES, JUEGOS, ETC\n\n",0xFF828282);
 		gfx_printf(&g_gfx_con, "%k SE REALIZARA UN HARD RESET LUEGO SE APAGARA LA CONSOLA\n\n",0xFF828282);
 		gfx_printf(&g_gfx_con, "%k SI NO SABES LO QUE HACES, PRESIONA B PARA ABORTAR \n\n",0xFF828282);
@@ -203,15 +203,17 @@ void ipl_main()
 
 //		
 //		BootStrapNX();
-		f_rename("/Nintendo", "/Hakutendo");
-		f_rename("/Nintendo", "/Hakutendo_1");
-		f_rename("/Nintendo", "/Hakutendo_2");
-		f_rename("/Nintendo", "/Hakutendo_3");
-		f_rename("/Nintendo", "/Hakutendo_4");
-		f_rename("/Nintendo", "/Hakutendo_5");
-		f_rename("/Nintendo", "/Hakutendo_6");
-		f_rename("/Nintendo", "/Hakutendo_7");
+		f_rename("/Nintendo", "/Hamburgesa_tendo");
+		f_rename("/Nintendo", "/Hamburgesa_tendo_1");
+		f_rename("/Nintendo", "/Hamburgesa_tendo_2");
+		f_rename("/Nintendo", "/Hamburgesa_tendo_3");
+		f_rename("/Nintendo", "/Hamburgesa_tendo_4");
+		f_rename("/Nintendo", "/Hamburgesa_tendo_5");
+		f_rename("/Nintendo", "/Hamburgesa_tendo_6");
+		f_rename("/Nintendo", "/Hamburgesa_tendo_7");
 		gfx_printf(&g_gfx_con, "%k*%k Nintendo Folder Renamed...\n",0xFF00FF22,0xFFCCCCCC);
+		f_unlink("/Haku33.nro");
+		f_unlink("/Switch/Haku33.nro");
     } else {
         gfx_printf(&g_gfx_con, "No SD Card Found...\n");
     }

@@ -1,10 +1,18 @@
 @echo off
-cd Hakupayload
+
+set /p IP=<C:/My-Switch-ip.txt
+
+dir /b *.nro>%temp%\filete.txt
+set /p File=<%temp%\filete.txt
+del "%temp%\filete.txt"
+title -%IP% - %File%
 make
-cd ..
-move /y Hakupayload\payload.bin romfs\Haku33_payload.bin
-make
-echo completado
-"C:\devkitPro\tools\bin\nxlink.exe" --address 192.168.1.129 Haku33.nro
+set a=%errorlevel%
+echo ------------------------------------------
+if %a% neq 0 color 04
+if %a% equ 0 color 0a
+
+echo -----------------------------------
+"C:\devkitPro\tools\bin\nxlink.exe" -a %IP% %File%
 %systemroot%\system32\timeout.exe 55
-exit
+cmd /k
