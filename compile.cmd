@@ -6,6 +6,8 @@ dir /b *.nro>%temp%\filete.txt
 set /p File=<%temp%\filete.txt
 del "%temp%\filete.txt"
 title -%IP% - %File%
+make -C Hakupayload/
+cp ./Hakupayload/payload.bin ./romfs/Haku33_payload.bin -f -v
 make
 set a=%errorlevel%
 echo ------------------------------------------

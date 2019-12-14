@@ -233,7 +233,7 @@ display_backlight_brightness(0, 1000);
 		g_gfx_con.scale = 3;
 		gfx_con_setpos(&g_gfx_con, 10, 10);
 		gfx_con_setcol(&g_gfx_con, 0xFF008F39, 0xFF726F68, 0xFF191414);
-		gfx_printf(&g_gfx_con, "BootStrapNX\n");
+		gfx_printf(&g_gfx_con, "BootStrapNX\n Haku33 has finish the Clean\n");
 		gfx_con_setcol(&g_gfx_con, 0xFFF9F9F9, 0, 0xFF191414);
 		gfx_con_setpos(&g_gfx_con, 950, 10);
 		gfx_printf(&g_gfx_con, "Battery: -%d%-", (battPercent >> 8) & 0xFF, (battPercent & 0xFF));

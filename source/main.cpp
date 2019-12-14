@@ -29,25 +29,25 @@ extern "C" {
 using namespace std;
 
 //traduction
-bool isSpanish()
+bool isSpanish = false;
+void set_LANG()
 {
 			setInitialize();
 			u64 lcode = 0;
-			s32 lang = 1;
+			SetLanguage lang;
 			setGetSystemLanguage(&lcode);
 			setMakeLanguage(lcode, &lang);
 				switch(lang)
 				{
 					case 5:
 					case 14:
-					return true;
+					isSpanish =  true;
 					   break;
 					default:
-					return false;
+					isSpanish =  false;
 						break;
 				}
 			setsysExit();
-		return false;
 }
 
 //ask to the switch for the serial detect incognito
@@ -142,8 +142,8 @@ char *incognito(void) {
 	bool led_on(void)
 	{
 				Result rc=0;
-					size_t i;
-					size_t total_entries;
+					s32 i;
+					s32 total_entries;
 					u64 UniquePadIds[2];
 					HidsysNotificationLedPattern pattern;
 					hidsysExit();
@@ -181,7 +181,7 @@ char *incognito(void) {
 	bool HasConnection()
 	{
 		u32 strg = 0;
-		nifmInitialize();
+		nifmInitialize(NifmServiceType_Admin);
 		nifmGetInternetConnectionStatus(NULL, &strg, NULL);
 		nifmExit();
 		return (strg > 0);
@@ -199,66 +199,66 @@ bool install()
 		//terminate System proc
 		printf("\x1b[32;1m*\x1b[0m Kill System Services\n");
 		consoleUpdate(NULL);
-		pmshellTerminateProcessByTitleId(0x010000000000000C);//btca	
-		pmshellTerminateProcessByTitleId(0x010000000000000E);//friends
-		pmshellTerminateProcessByTitleId(0x010000000000001E);//account
-		pmshellTerminateProcessByTitleId(0x010000000000001F);//ns
-		pmshellTerminateProcessByTitleId(0x0100000000000020);//nfc
-		pmshellTerminateProcessByTitleId(0x0100000000000022);//capsrv
-		pmshellTerminateProcessByTitleId(0x0100000000000024);//ssl
-		pmshellTerminateProcessByTitleId(0x0100000000000025);//nim
-		pmshellTerminateProcessByTitleId(0x010000000000002B);//erpt
-		pmshellTerminateProcessByTitleId(0x010000000000002E);//pctl
-		pmshellTerminateProcessByTitleId(0x010000000000002F);//npns
-		pmshellTerminateProcessByTitleId(0x0100000000000030);//eupld
-		pmshellTerminateProcessByTitleId(0x0100000000000033);//es
-		pmshellTerminateProcessByTitleId(0x0100000000000036);//creport
-		pmshellTerminateProcessByTitleId(0x010000000000003A);//migration
-		pmshellTerminateProcessByTitleId(0x010000000000003E);//olsc
-		pmshellTerminateProcessByTitleId(0x0100000000001000);//qlaunch - make freeze?
-		pmshellTerminateProcessByTitleId(0x0100000000001009);//miiEdit
+		pmshellTerminateProgram(0x010000000000000C);//btca	
+		pmshellTerminateProgram(0x010000000000000E);//friends
+		pmshellTerminateProgram(0x010000000000001E);//account
+		pmshellTerminateProgram(0x010000000000001F);//ns
+		pmshellTerminateProgram(0x0100000000000020);//nfc
+		pmshellTerminateProgram(0x0100000000000022);//capsrv
+		pmshellTerminateProgram(0x0100000000000024);//ssl
+		pmshellTerminateProgram(0x0100000000000025);//nim
+		pmshellTerminateProgram(0x010000000000002B);//erpt
+		pmshellTerminateProgram(0x010000000000002E);//pctl
+		pmshellTerminateProgram(0x010000000000002F);//npns
+		pmshellTerminateProgram(0x0100000000000030);//eupld
+		pmshellTerminateProgram(0x0100000000000033);//es
+		pmshellTerminateProgram(0x0100000000000036);//creport
+		pmshellTerminateProgram(0x010000000000003A);//migration
+		pmshellTerminateProgram(0x010000000000003E);//olsc
+		pmshellTerminateProgram(0x0100000000001000);//qlaunch - make freeze?
+		pmshellTerminateProgram(0x0100000000001009);//miiEdit
 		
 		//serv test may freeze
 		printf("\x1b[32;1m*\x1b[0m Kill Extra Services\n");
 		consoleUpdate(NULL);
-/*		pmshellTerminateProcessByTitleId(0x0100000000000020); //nfc
-		pmshellTerminateProcessByTitleId(0x0100000000000021); //psc
-//		pmshellTerminateProcessByTitleId(0x0100000000000023); //am    make freeze
-		pmshellTerminateProcessByTitleId(0x0100000000000024); //ssl
-		pmshellTerminateProcessByTitleId(0x010000000000002E); //pctl
-		pmshellTerminateProcessByTitleId(0x010000000000002F); //npns
-		pmshellTerminateProcessByTitleId(0x0100000000000034); //fatal
-//		pmshellTerminateProcessByTitleId(0x0100000000000037); //ro   make freeze
-		pmshellTerminateProcessByTitleId(0x0100000000000039); //sdb
-		pmshellTerminateProcessByTitleId(0x010000000000003E); //olsc
-*/		pmshellTerminateProcessByTitleId(0x0100000000002071); //posi (ns)
-		pmshellTerminateProcessByTitleId(0x0100000000000809); //used by sdb
+/*		pmshellTerminateProgram(0x0100000000000020); //nfc
+		pmshellTerminateProgram(0x0100000000000021); //psc
+//		pmshellTerminateProgram(0x0100000000000023); //am    make freeze
+		pmshellTerminateProgram(0x0100000000000024); //ssl
+		pmshellTerminateProgram(0x010000000000002E); //pctl
+		pmshellTerminateProgram(0x010000000000002F); //npns
+		pmshellTerminateProgram(0x0100000000000034); //fatal
+//		pmshellTerminateProgram(0x0100000000000037); //ro   make freeze
+		pmshellTerminateProgram(0x0100000000000039); //sdb
+		pmshellTerminateProgram(0x010000000000003E); //olsc
+*/		pmshellTerminateProgram(0x0100000000002071); //posi (ns)
+		pmshellTerminateProgram(0x0100000000000809); //used by sdb
 		
 		//critical serv 
 		printf("\x1b[32;1m*\x1b[0m terminate Critical Services\n");
 		consoleUpdate(NULL);
-		pmshellTerminateProcessByTitleId(0x0100000000000012);//bsdsockets - make switch freeze on sxos ftp
-		pmshellTerminateProcessByTitleId(0x0100000000000009);//settings - make switch freeze on airplane mode
-		pmshellTerminateProcessByTitleId(0x010000000000000F);//nifm
-		pmshellTerminateProcessByTitleId(0x0100000000000016);//Wlan
+		pmshellTerminateProgram(0x0100000000000012);//bsdsockets - make switch freeze on sxos ftp
+		pmshellTerminateProgram(0x0100000000000009);//settings - make switch freeze on airplane mode
+		pmshellTerminateProgram(0x010000000000000F);//nifm
+		pmshellTerminateProgram(0x0100000000000016);//Wlan
 	
 		//terminate Homebrew Serv
 		printf("\x1b[32;1m*\x1b[0m Kill Homebrew Services\n");
 		consoleUpdate(NULL);
-		pmshellTerminateProcessByTitleId(0x420000000000000E);//FTP
-		pmshellTerminateProcessByTitleId(0x0100000000000352);//Emuiio
-		pmshellTerminateProcessByTitleId(0x200000000000010);//Lan Play
-		pmshellTerminateProcessByTitleId(0x0100000000000FAF);//HDI
-		pmshellTerminateProcessByTitleId(0x420000000000000B);//sysplay
-		pmshellTerminateProcessByTitleId(0x00FF0000636C6BFF);//sys-clk
-		pmshellTerminateProcessByTitleId(0x0100000000534C56);//ReverseNX
-		pmshellTerminateProcessByTitleId(0x0100000000000069);//ReiSpoof
+		pmshellTerminateProgram(0x420000000000000E);//FTP
+		pmshellTerminateProgram(0x0100000000000352);//Emuiio
+		pmshellTerminateProgram(0x200000000000010);//Lan Play
+		pmshellTerminateProgram(0x0100000000000FAF);//HDI
+		pmshellTerminateProgram(0x420000000000000B);//sysplay
+		pmshellTerminateProgram(0x00FF0000636C6BFF);//sys-clk
+		pmshellTerminateProgram(0x0100000000534C56);//ReverseNX
+		pmshellTerminateProgram(0x0100000000000069);//ReiSpoof
 		
 		//mount system
 		printf("\x1b[32;1m*\x1b[0m mount system\n");
 		consoleUpdate(NULL);
 		FsFileSystem mySystem;
-		fsOpenBisFileSystem(&mySystem, FsBisStorageId_System, "");
+		fsOpenBisFileSystem(&mySystem, FsBisPartitionId_System, "");
 		fsdevMountDevice("myssytem", mySystem);
 		//delete system
 		printf("\x1b[32;1m*\x1b[0m Delete system\n");
@@ -277,7 +277,7 @@ bool install()
 		printf("\x1b[32;1m*\x1b[0m mount User\n");
 		consoleUpdate(NULL);
 		FsFileSystem myUser;
-		fsOpenBisFileSystem(&myUser, FsBisStorageId_User, "");
+		fsOpenBisFileSystem(&myUser, FsBisPartitionId_User, "");
 		fsdevMountDevice("myUser", myUser);
 		//delete user
 		printf("\x1b[32;1m*\x1b[0m delete User\n");
@@ -348,7 +348,7 @@ if (kHeld & KEY_PLUS)
 
 		consoleInit(NULL);
 			printf("\x1b[32;1m*\x1b[0m %s v%s Kronos2308, Hard Reset\n",TITLE, VERSION);
-				if(isSpanish())
+				if(isSpanish)
 				{
 					printf("\n\x1b[30;1m TU CONSOLA SERA COMPLETAMENTE LIMPADA: SAVES, JUEGOS, ETC  \x1b[0m\n");
 					printf("\n\x1b[30;1m SE REALIZARA UN HARD RESET LUEGO SE APAGARA LA CONSOLA \x1b[0m\n");
