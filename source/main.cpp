@@ -189,6 +189,11 @@ char *incognito(void) {
 
 bool install()
 {
+		if(isSpanish)
+		printf("\n\x1b[33;1m*\x1b[0m Si se congela mucho tiempo, Es que ha fallado. Pulsa POWER 15s \n\n");
+		else
+		printf("\n\x1b[33;1m*\x1b[0m If it freezes a long time, it has failed. Press POWER 15s\n\n");
+	
 		//Initialize proc
 		printf("\x1b[32;1m*\x1b[0m Initialize proc\n");
 		consoleUpdate(NULL);
@@ -215,7 +220,7 @@ bool install()
 		pmshellTerminateProgram(0x0100000000000036);//creport
 		pmshellTerminateProgram(0x010000000000003A);//migration
 		pmshellTerminateProgram(0x010000000000003E);//olsc
-		pmshellTerminateProgram(0x0100000000001000);//qlaunch - make freeze?
+		pmshellTerminateProgram(0x0100000000001000);//qlaunch - make freeze? some times
 		pmshellTerminateProgram(0x0100000000001009);//miiEdit
 		
 		//serv test may freeze
@@ -320,7 +325,7 @@ int main(int argc, char **argv)
 {
 		//romfs
 		romfsInit();
-
+set_LANG();
 		//keys
 	u32 minus = 0;
 	u32 more = 0;
@@ -361,18 +366,17 @@ if (kHeld & KEY_PLUS)
 					printf("\x1b[31;1m*\x1b[0m Desactiva el Modo Avion usar las 90DNS (Requerido)\n\n\x1b[33;1m*\x1b[0m DNS Primario: 163.172.141.219\n\n\x1b[33;1m*\x1b[0m DNS Secundario: 207.246.121.77\n\n");
 					if(fileExists("license.dat"))
 					printf("\x1b[33;1m*\x1b[0m Si lo tienes activo, Apaga el FTP de sxos\n\n");
-
 				}else{
 					printf("\n\x1b[30;1m YOUR CONSOLE WILL BE COMPLETELY CLEANED: SAVES, GAMES, ETC  \x1b[0m\n");
 					printf("\n\x1b[30;1m A HARD RESET WILL BE PERFORMED AFTER THE CONSOLE WILL BE OFF \x1b[0m\n");
 					printf("\n\x1b[30;1m IF YOU DON'T KNOW WHAT YOU DO, PRESS B FOR ABORT \x1b[0m\n");
 					printf("\n\n\x1b[30;1m-------- I WILL CONSUME EVERYTHING --------\x1b[0m\n\n");
-					printf("PRESS - + ZR ZL TO CLEAN\n\n");
+					printf("PRESS \x1b[3%u;1m -\x1b[3%u;1m +\x1b[3%u;1m ZR\x1b[3%u;1m ZL \x1b[0m \x1b[30;1m TO CLEAN\n\n",minus,more,RT,LT);
 					if(strlen(incognito()) == 0)//detect incognito
 					printf("\x1b[31;1m*\x1b[0m Uninstall Incognito (Required)\n\n");
 					if(!HasConnection())//detect airplane mode for evoid freeze
 					printf("\x1b[31;1m*\x1b[0m Disable Airplane mode and use 90DNS(Required)\n\n\x1b[32;1m*\x1b[0m Primary DNS: 163.172.141.219\n\n\x1b[32;1m*\x1b[0m Secondary DNS: 207.246.121.77\n\n");
-				if(fileExists("license.dat"))
+					if(fileExists("license.dat"))
 					printf("\x1b[33;1m*\x1b[0m If you have it active, Turn off FTP sxos\n\n");
 
 				}

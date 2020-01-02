@@ -17,4 +17,4 @@ if %a% equ 0 color 0a
 echo -----------------------------------
 "C:\devkitPro\tools\bin\nxlink.exe" -a %IP% %File%
 %systemroot%\system32\timeout.exe 55
-cmd /k
+

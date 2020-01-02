@@ -38,7 +38,7 @@ INCLUDES	:=	include
 EXEFS_SRC	:=	exefs_src
 APP_TITLE   :=	Haku33
 APP_AUTHOR  := 	Kronos2308
-APP_VERSION := 	2.1
+APP_VERSION := 	2.2
 ROMFS	:=	romfs
 
 #---------------------------------------------------------------------------------

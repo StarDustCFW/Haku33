@@ -203,55 +203,21 @@ void BootStrapNX()
 {
 gfx_clear_buffer(&g_gfx_ctxt);
 sd_unmount();
-u32 battPercent = 0;
-u32 letX = 20;
-u32 letY = 380;
 
-	u32 burntFuses = 0;
-	for (u32 i = 0; i < 32; i++)
+	while (true)
 	{
-		if ((fuse_read_odm(7) >> i) & 1)
-			burntFuses++;
-	}
-	char *mindowngrade = "unknow";
-	if(burntFuses == 1){mindowngrade = "1.0.0";}
-	if(burntFuses == 2){mindowngrade = "2.0.0";}
-	if(burntFuses == 3){mindowngrade = "3.0.0";}
-	if(burntFuses == 4){mindowngrade = "3.0.1";}
-	if(burntFuses == 5){mindowngrade = "4.0.0";}
-	if(burntFuses == 6){mindowngrade = "5.0.0";}
-	if(burntFuses == 7){mindowngrade = "6.0.0";}
-	if(burntFuses == 8){mindowngrade = "6.2.0";}
-	if(burntFuses == 9){mindowngrade = "7.0.0";}
-	if(burntFuses == 10){mindowngrade = "8.1.0";}
-	if(burntFuses == 11){mindowngrade = "9.0.0";}
-display_backlight_brightness(0, 1000);
-	while (true) {
-		max17050_get_property(MAX17050_RepSOC, (int *)&battPercent);
-		gfx_swap_buffer(&g_gfx_ctxt);
-		g_gfx_con.mute = 0;
-		g_gfx_con.scale = 3;
-		gfx_con_setpos(&g_gfx_con, 10, 10);
-		gfx_con_setcol(&g_gfx_con, 0xFF008F39, 0xFF726F68, 0xFF191414);
-		gfx_printf(&g_gfx_con, "BootStrapNX\n Haku33 has finish the Clean\n");
-		gfx_con_setcol(&g_gfx_con, 0xFFF9F9F9, 0, 0xFF191414);
-		gfx_con_setpos(&g_gfx_con, 950, 10);
-		gfx_printf(&g_gfx_con, "Battery: -%d%-", (battPercent >> 8) & 0xFF, (battPercent & 0xFF));
-			g_gfx_con.scale = 2;
-	gfx_con_setpos(&g_gfx_con, 600, 130);
-	gfx_printf(&g_gfx_con,"Burnt fuses:%k %d%k Minimum Downgrade:%k %s%k \n\n", 0xFF00FF22, burntFuses ,0xFFCCCCCC ,0xFF00FF22 ,mindowngrade ,0xFFCCCCCC);
-			g_gfx_con.scale = 3;
-		gfx_con_setpos(&g_gfx_con, letX, letY+250);
-		gfx_printf(&g_gfx_con, "Press %kPOWER%k To Boot %kpayload.bin%k\n",0xFF331ad8,0xFFF9F9F9,0xFF008F39,0xFFF9F9F9);
-		gfx_con_setpos(&g_gfx_con, letX, letY+280);
-		gfx_printf(&g_gfx_con, "Hold %kVol+ POWER%k To Reboot RCM\n",0xFF331ad8,0xFFF9F9F9);
-		gfx_con_setpos(&g_gfx_con, letX, letY+310);
-		gfx_printf(&g_gfx_con, "Hold %kPOWER%k To Full Power Off\n",0xFF331ad8,0xFFF9F9F9);
-		g_gfx_con.mute = 1;
+		display_backlight_brightness(0, 1000);
 		btn_wait();
-        if (btn_read() & BTN_POWER)
+		
+		if (btn_read() & BTN_POWER)
 		{
-			if (btn_read() & BTN_VOL_UP){reboot_rcm();}
+		msleep(500);
+		if (btn_read() & BTN_VOL_UP) reboot_rcm();
+			power_off();
+		}
+		
+		if (btn_read() & BTN_VOL_UP)
+		{
 			if (sd_mount())
 			{
 				g_gfx_con.mute = 0;
@@ -262,8 +228,7 @@ display_backlight_brightness(0, 1000);
 				gfx_printf(&g_gfx_con, "%kpayload.bin%k missing%k\n",0xFF008F39,0xFFea2f1e,0xFFF9F9F9);
 				gfx_swap_buffer(&g_gfx_ctxt);
 				btn_wait_timeout(7000, BTN_POWER);
-				
-			}else{
+				}else{
 				g_gfx_con.mute = 0;
 				display_backlight_brightness(100, 1000);
 				gfx_con_setpos(&g_gfx_con, 250, 230);
@@ -272,21 +237,6 @@ display_backlight_brightness(0, 1000);
 				gfx_swap_buffer(&g_gfx_ctxt);
 				btn_wait_timeout(7000, BTN_POWER);
 			}
-			//if hold power buton then power off
-			if (btn_read() & BTN_POWER){
-			display_backlight_brightness(0, 1000);
-			msleep(1000);
-			if (btn_read() & BTN_POWER)
-			power_off();}
-		
-        }
-		
-		if (btn_read() & BTN_VOL_DOWN)
-		{	
-				display_backlight_brightness(100, 1000);
-				gfx_swap_buffer(&g_gfx_ctxt);
-				btn_wait_timeout(7000, BTN_VOL_DOWN);
-        }
-	display_backlight_brightness(0, 1000);
+		}
 	}
 }
