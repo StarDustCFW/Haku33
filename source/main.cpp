@@ -24,6 +24,7 @@
 
 extern "C" {
 #include "reboot.h"
+#include "ftpdisable.h"
 }
 
 using namespace std;
@@ -331,6 +332,8 @@ set_LANG();
 	u32 more = 0;
 	u32 LT = 0;
 	u32 RT = 0;
+	txinit();
+	txforcedisableftp();
 	while (appletMainLoop())
 	{
 
@@ -380,6 +383,7 @@ if (kHeld & KEY_PLUS)
 					printf("\x1b[33;1m*\x1b[0m If you have it active, Turn off FTP sxos\n\n");
 
 				}
+				txexit();
 		consoleUpdate(NULL);
 		
 		

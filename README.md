@@ -28,7 +28,7 @@ So if it freezes, you should heed the warnings on the screen before asking for s
 * And special thanks to Rumba the retrogamer_74 dog
 
 ### Known Bugs
-* Freezes in sxos if FTP is enabled
+* Freezes in sxos if FTP is enabled , fixed in ..
 - - It froze if airplane mode was activated, fixed in 1.4
 * 1.6 may freeze 
 
