@@ -182,7 +182,7 @@ void ipl_main()
 
 //Blank ,0xFF00FF22,0xFFCCCCCC verde 
 //gfx_render_splash(&g_gfx_ctxt, (u8*)sd_file_read("StarDust/background.bmp"));
-		gfx_printf(&g_gfx_con, "%k*%k Haku33 v2.2 Kronos2308, Hard Reset\n\n",0xFF00FF22,0xFFCCCCCC);
+		gfx_printf(&g_gfx_con, "%k*%k Haku33 v2.3 Kronos2308, Hard Reset\n\n",0xFF00FF22,0xFFCCCCCC);
 		gfx_printf(&g_gfx_con, "%k TU CONSOLA SERA COMPLETAMENTE LIMPADA: SAVES, JUEGOS, ETC\n\n",0xFF828282);
 		gfx_printf(&g_gfx_con, "%k SE REALIZARA UN HARD RESET LUEGO SE APAGARA LA CONSOLA\n\n",0xFF828282);
 		gfx_printf(&g_gfx_con, "%k SI NO SABES LO QUE HACES, PRESIONA B PARA ABORTAR \n\n",0xFF828282);
