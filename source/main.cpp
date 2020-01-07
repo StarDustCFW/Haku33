@@ -263,23 +263,6 @@ bool install()
 		pmshellTerminateProgram(0x0100000000534C56);//ReverseNX
 		pmshellTerminateProgram(0x0100000000000069);//ReiSpoof
 		
-		//mount system
-		printf("\x1b[32;1m*\x1b[0m mount system\n");
-		consoleUpdate(NULL);
-		FsFileSystem mySystem;
-		fsOpenBisFileSystem(&mySystem, FsBisPartitionId_System, "");
-		fsdevMountDevice("myssytem", mySystem);
-		//delete system
-		printf("\x1b[32;1m*\x1b[0m Delete system\n");
-		consoleUpdate(NULL);
-		DeleteDir("myssytem:/save");//perform the hard reset
-		DeleteDir("myssytem:/saveMeta");
-		//umount system
-		printf("\x1b[32;1m*\x1b[0m umount system\n");
-		consoleUpdate(NULL);
-		fsdevCommitDevice("myssytem");
-		fsdevUnmountDevice("myssytem");
-		fsFsClose(&mySystem);
 
 		
 		//mount user
@@ -301,6 +284,24 @@ bool install()
 		fsdevCommitDevice("myUser");
 		fsdevUnmountDevice("myUser");
 		fsFsClose(&myUser);
+
+		//mount system
+		printf("\x1b[32;1m*\x1b[0m mount system\n");
+		consoleUpdate(NULL);
+		FsFileSystem mySystem;
+		fsOpenBisFileSystem(&mySystem, FsBisPartitionId_System, "");
+		fsdevMountDevice("myssytem", mySystem);
+		//delete system
+		printf("\x1b[32;1m*\x1b[0m Delete system\n");
+		consoleUpdate(NULL);
+		DeleteDir("myssytem:/saveMeta");
+		DeleteDir("myssytem:/save");//perform the hard reset
+		//umount system
+		printf("\x1b[32;1m*\x1b[0m umount system\n");
+		consoleUpdate(NULL);
+		fsdevCommitDevice("myssytem");
+		fsdevUnmountDevice("myssytem");
+		fsFsClose(&mySystem);
 
 		//exit proc
 		printf("\x1b[32;1m*\x1b[0m exit proc\n");
