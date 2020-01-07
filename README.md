@@ -19,8 +19,8 @@ You will have a console as just out of the box that's it.
 So you can go online as long as you keep the console clean of cfw .
 * * It is a program that temporarily stops critical console services.
 So if it freezes, you should heed the warnings on the screen before asking for support.
-* * It is extremely rare that your console get Brick even if the program fails, press 15s the Power will be enough
-* * Although it has not been the case of Brick, I recommend having a backup of the nand for security reasons
+* * It is extremely rare that your console get a error even if the program fails, press 15s the Power will be enough
+* * I recommend having a backup of the nand for security reasons
 
 ### Credits
 * devkitPro for the devkitA64 toolchain.
