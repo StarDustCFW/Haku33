@@ -25,7 +25,6 @@ So if it freezes, you should heed the warnings on the screen before asking for s
 ### Credits
 * devkitPro for the devkitA64 toolchain.
 
-* And special thanks to Rumba the retrogamer_74 dog
 
 ### Known Bugs
 * Freezes in sxos if FTP is enabled , fixed in ..
