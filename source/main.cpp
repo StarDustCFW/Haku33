@@ -195,6 +195,7 @@ bool install()
 		else
 		printf("\n\x1b[33;1m*\x1b[0m If it freezes a long time, it has failed. Press POWER 15s\n\n");
 	
+		//force disable sxos ftp for evoid  freeze
 		txinit();
 		txforcedisableftp();
 		txexit();
@@ -364,7 +365,7 @@ if (kHeld & KEY_PLUS)
 					printf("\n\x1b[30;1m SE REALIZARA UN HARD RESET LUEGO SE APAGARA LA CONSOLA \x1b[0m\n");
 					printf("\n\x1b[30;1m SI NO SABES LO QUE HACES, PRESIONA B PARA ABORTAR \x1b[0m\n");
 					printf("\n\n\x1b[30;1m-------- LO DEVORARE TODO --------\x1b[0m\n\n");
-					printf("\x1b[30;1m PULSA \x1b[3%u;1m -\x1b[3%u;1m +\x1b[3%u;1m ZR\x1b[3%u;1m ZL \x1b[0m \x1b[30;1m PARA LIMPIAR\n\n",minus,more,RT,LT);
+					printf("\x1b[30;1m PULSA \x1b[3%u;1m ZL \x1b[3%u;1m -\x1b[3%u;1m +\x1b[3%u;1m ZR\x1b[0m \x1b[30;1m PARA LIMPIAR\n\n",LT,minus,more,RT);
 					if(strlen(incognito()) == 0)//detect incognito
 					printf("\x1b[31;1m*\x1b[0m Desinstala Incognito %s(Requerido)\n\n",incognito());
 					if(!HasConnection())//detect airplane mode for evoid freeze
@@ -374,7 +375,7 @@ if (kHeld & KEY_PLUS)
 					printf("\n\x1b[30;1m A HARD RESET WILL BE PERFORMED AFTER THE CONSOLE WILL BE OFF \x1b[0m\n");
 					printf("\n\x1b[30;1m IF YOU DON'T KNOW WHAT YOU DO, PRESS B FOR ABORT \x1b[0m\n");
 					printf("\n\n\x1b[30;1m-------- I WILL CONSUME EVERYTHING --------\x1b[0m\n\n");
-					printf("PRESS \x1b[3%u;1m -\x1b[3%u;1m +\x1b[3%u;1m ZR\x1b[3%u;1m ZL \x1b[0m \x1b[30;1m TO CLEAN\n\n",minus,more,RT,LT);
+					printf("PRESS \x1b[3%u;1m ZL\x1b[3%u;1m -\x1b[3%u;1m +\x1b[3%u;1m ZR \x1b[0m \x1b[30;1m TO CLEAN\n\n",LT,minus,more,RT);
 					if(strlen(incognito()) == 0)//detect incognito
 					printf("\x1b[31;1m*\x1b[0m Uninstall Incognito (Required)\n\n");
 					if(!HasConnection())//detect airplane mode for evoid freeze
