@@ -22,14 +22,13 @@ So you can go online as long as you keep the console clean of cfw .
 So if it freezes, you should heed the warnings on the screen before asking for support.
 * * It is extremely rare that your console get a error even if the program fails, press 15s the Power will be enough
 * * I recommend having a backup of the nand for security reasons
+* Haku33 is a simplification of this method [Video](https://youtu.be/9jV8iN7LJPY?list=PLNawpCFHdbXY-ZgF43vEJBk2IoweJfAlm)
 
 ### Credits
 * devkitPro for the devkitA64 toolchain.
 
-
 ### Known Bugs
-* Freezes in sxos if FTP is enabled , fixed in ..
-- - It froze if airplane mode was activated, fixed in 1.4
+* It freeze  if airplane mode is activated
 * 1.6 may freeze 
 
 <a href="https://discord.io/myrincon"><img src="icon.jpg" alt="Discord Server" /></a>
