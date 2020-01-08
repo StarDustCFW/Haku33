@@ -10,6 +10,7 @@ Perform a Hard Reset of the switch, and leave it as if it had just left the fact
 * It is advisable to make a backup before using it, since despite being well tested failures can occur
 * The premise is elimination. Can it be the lack of info that makes you get banned? so far the case has not occurred
 * True that it is not 100% safe but the people who have tested it have not yet been banned [reference](https://youtu.be/9jV8iN7LJPY?list=PLNawpCFHdbXY-ZgF43vEJBk2IoweJfAlm)
+* Haku33 is a simplification of this method [Video](https://youtu.be/9jV8iN7LJPY?list=PLNawpCFHdbXY-ZgF43vEJBk2IoweJfAlm) of clean
 * If you have a clean backup of the Nand it is better that, and under no circumstances use this in switch IPatched
 * If your console is Banned there is nothing to do
 * This will completely clean your switch so you will lose everything
@@ -22,7 +23,7 @@ So you can go online as long as you keep the console clean of cfw .
 So if it freezes, you should heed the warnings on the screen before asking for support.
 * * It is extremely rare that your console get a error even if the program fails, press 15s the Power will be enough
 * * I recommend having a backup of the nand for security reasons
-* Haku33 is a simplification of this method [Video](https://youtu.be/9jV8iN7LJPY?list=PLNawpCFHdbXY-ZgF43vEJBk2IoweJfAlm)
+
 
 ### Credits
 * devkitPro for the devkitA64 toolchain.
