@@ -139,7 +139,7 @@ char *incognito(void) {
 		closedir(d);
 	}
 
-	
+	//Power on led
 	bool led_on(void)
 	{
 				Result rc=0;
@@ -179,6 +179,7 @@ char *incognito(void) {
 	return 0;
 	}
 
+	//check connnection 
 	bool HasConnection()
 	{
 		u32 strg = 0;
@@ -188,19 +189,23 @@ char *incognito(void) {
 		return (strg > 0);
 	}
 
+
+//Clean Funtion
 bool install()
 {
+		//warning
 		if(isSpanish)
 		printf("\n\x1b[33;1m*\x1b[0m Si se congela mucho tiempo, Es que ha fallado. Pulsa POWER 15s \n\n");
 		else
-		printf("\n\x1b[33;1m*\x1b[0m If it freezes a long time, it has failed. Press POWER 15s\n\n");
+		printf("\n\x1b[33;1m*\x1b[0m If it freezes a long time, It has failed. Press POWER 15s\n\n");
 	
 		//force disable sxos ftp for evoid  freeze
 		txinit();
 		txforcedisableftp();
 		txexit();
+		
 		//Initialize proc
-		printf("\x1b[32;1m*\x1b[0m Initialize proc\n");
+		printf("\x1b[32;1m*\x1b[0m Initialize Proc\n");
 		consoleUpdate(NULL);
 		fsInitialize();
 		pmdmntInitialize();
@@ -264,8 +269,6 @@ bool install()
 		pmshellTerminateProgram(0x0100000000534C56);//ReverseNX
 		pmshellTerminateProgram(0x0100000000000069);//ReiSpoof
 		
-
-		
 		//mount user
 		printf("\x1b[32;1m*\x1b[0m mount User\n");
 		consoleUpdate(NULL);
@@ -273,7 +276,7 @@ bool install()
 		fsOpenBisFileSystem(&myUser, FsBisPartitionId_User, "");
 		fsdevMountDevice("myUser", myUser);
 		//delete user
-		printf("\x1b[32;1m*\x1b[0m delete User\n");
+		printf("\x1b[32;1m*\x1b[0m Delete User\n");
 		consoleUpdate(NULL);
 		DeleteDir("myUser:/Contents/registered");
 		DeleteDir("myUser:/Contents");
@@ -305,7 +308,7 @@ bool install()
 		fsFsClose(&mySystem);
 
 		//exit proc
-		printf("\x1b[32;1m*\x1b[0m exit proc\n");
+		printf("\x1b[32;1m*\x1b[0m Exit proc\n");
 		consoleUpdate(NULL);
 		pmdmntExit();
 		pmshellExit();
@@ -322,41 +325,47 @@ led_on();
 			{
 				bpcShutdownSystem();
 			}
-//			bpcRebootSystem();
 			bpcExit();
 return 0;
 }
 
 int main(int argc, char **argv)
 {
-		//romfs
-		romfsInit();
-set_LANG();
-		//keys
-	u32 minus = 0;
-	u32 more = 0;
-	u32 LT = 0;
-	u32 RT = 0;
+	set_LANG();
+	
+	//romfs
+	romfsInit();
+
+	//keys
 	while (appletMainLoop())
 	{
-
 	    hidScanInput();
         u64 kDown = hidKeysDown(CONTROLLER_P1_AUTO);
         u64 kHeld = hidKeysHeld(CONTROLLER_P1_AUTO);
-		
-	minus = 0;
-	more = 0;
-	LT = 0;
-	RT = 0;
-if (kHeld & KEY_ZL)
-	LT = 2;
-if (kHeld & KEY_ZR)
-	RT = 2;
-if (kHeld & KEY_MINUS)
-	minus = 2;
-if (kHeld & KEY_PLUS)
-	more = 2;
 
+		u32 minus = 0;
+		u32 more = 0;
+		u32 LT = 0;
+		u32 RT = 0;
+				
+	if (kHeld & KEY_ZL)
+		LT = 4;
+	if (kHeld & KEY_ZR)
+		RT = 4;
+	if (kHeld & KEY_MINUS)
+		minus = 4;
+	if (kHeld & KEY_PLUS)
+		more = 4;
+
+		if (kHeld & KEY_ZL && kHeld & KEY_ZR && kHeld & KEY_MINUS && kHeld & KEY_PLUS)
+		{
+			minus = 2;
+			more = 2;
+			LT = 2;
+			RT = 2;
+		}
+
+		//main menu
 		consoleInit(NULL);
 			printf("\x1b[32;1m*\x1b[0m %s v%s Kronos2308, Hard Reset\n",TITLE, VERSION);
 				if(isSpanish)
@@ -365,7 +374,7 @@ if (kHeld & KEY_PLUS)
 					printf("\n\x1b[30;1m SE REALIZARA UN HARD RESET LUEGO SE APAGARA LA CONSOLA \x1b[0m\n");
 					printf("\n\x1b[30;1m SI NO SABES LO QUE HACES, PRESIONA B PARA ABORTAR \x1b[0m\n");
 					printf("\n\n\x1b[30;1m-------- LO DEVORARE TODO --------\x1b[0m\n\n");
-					printf("\x1b[30;1m PULSA \x1b[3%u;1m ZL \x1b[3%u;1m -\x1b[3%u;1m +\x1b[3%u;1m ZR\x1b[0m \x1b[30;1m PARA LIMPIAR\n\n",LT,minus,more,RT);
+					printf("\x1b[30;1m PULSA \x1b[3%u;1m ZL\x1b[3%u;1m -\x1b[3%u;1m +\x1b[3%u;1m ZR\x1b[0m \x1b[30;1m JUNTOS PARA LIMPIAR\n\n",LT,minus,more,RT);
 					if(strlen(incognito()) == 0)//detect incognito
 					printf("\x1b[31;1m*\x1b[0m Desinstala Incognito %s(Requerido)\n\n",incognito());
 					if(!HasConnection())//detect airplane mode for evoid freeze
@@ -375,7 +384,7 @@ if (kHeld & KEY_PLUS)
 					printf("\n\x1b[30;1m A HARD RESET WILL BE PERFORMED AFTER THE CONSOLE WILL BE OFF \x1b[0m\n");
 					printf("\n\x1b[30;1m IF YOU DON'T KNOW WHAT YOU DO, PRESS B FOR ABORT \x1b[0m\n");
 					printf("\n\n\x1b[30;1m-------- I WILL CONSUME EVERYTHING --------\x1b[0m\n\n");
-					printf("PRESS \x1b[3%u;1m ZL\x1b[3%u;1m -\x1b[3%u;1m +\x1b[3%u;1m ZR \x1b[0m \x1b[30;1m TO CLEAN\n\n",LT,minus,more,RT);
+					printf("PRESS \x1b[3%u;1m ZL\x1b[3%u;1m -\x1b[3%u;1m +\x1b[3%u;1m ZR \x1b[0m \x1b[30;1m TOGETHER TO CLEAN\n\n",LT,minus,more,RT);
 					if(strlen(incognito()) == 0)//detect incognito
 					printf("\x1b[31;1m*\x1b[0m Uninstall Incognito (Required)\n\n");
 					if(!HasConnection())//detect airplane mode for evoid freeze
@@ -383,8 +392,8 @@ if (kHeld & KEY_PLUS)
 				}
 		consoleUpdate(NULL);
 		
-		
-		if ((kDown & KEY_ZL || kDown & KEY_ZR || kDown & KEY_MINUS || kDown & KEY_PLUS) && (kHeld & KEY_ZL && kHeld & KEY_ZR && kHeld & KEY_MINUS && kHeld & KEY_PLUS))
+		//call clean after combo
+		if (kHeld & KEY_ZL && kHeld & KEY_ZR && kHeld & KEY_MINUS && kHeld & KEY_PLUS)
 		{
 			install();
 			break;
@@ -395,7 +404,6 @@ if (kHeld & KEY_PLUS)
 			break;
 		}
 	}	
-
 
 	//cansel
 	fsExit();
