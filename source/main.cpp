@@ -197,12 +197,40 @@ bool install()
 		if(isSpanish)
 		printf("\n\x1b[33;1m*\x1b[0m Si se congela mucho tiempo, Es que ha fallado. Pulsa POWER 15s \n\n");
 		else
-		printf("\n\x1b[33;1m*\x1b[0m If it freezes a long time, It has failed. Press POWER 15s\n\n");
+		printf("\n\x1b[33;1m*\x1b[0m If it freezes for a long time, It has failed. Press POWER 15s\n\n");
 	
 		//force disable sxos ftp for evoid  freeze
 		txinit();
 		txforcedisableftp();
 		txexit();
+
+		//terminate Homebrew Serv
+		printf("\x1b[32;1m*\x1b[0m Kill Homebrew Services\n");
+		consoleUpdate(NULL);
+		pmshellTerminateProgram(0x420000000000000E);//FTP
+		pmshellTerminateProgram(0x0100000000000352);//Emuiio
+		pmshellTerminateProgram(0x200000000000010);//Lan Play
+		pmshellTerminateProgram(0x0100000000000FAF);//HDI
+		pmshellTerminateProgram(0x420000000000000B);//sysplay
+		pmshellTerminateProgram(0x00FF0000636C6BFF);//sys-clk
+		pmshellTerminateProgram(0x0100000000534C56);//ReverseNX
+		pmshellTerminateProgram(0x0100000000000069);//ReiSpoof
+		
+		//DeInitialize
+		printf("\x1b[32;1m*\x1b[0m DeInitialize\n");
+		consoleUpdate(NULL);
+		hidsysExit();
+		socketExit();
+		fsdevUnmountAll();
+		pcvExit();
+		psmExit();
+		nsExit();
+		apmExit();
+		socketExit();
+		nifmExit();
+		splExit();
+		setsysExit();
+		setExit();
 		
 		//Initialize proc
 		printf("\x1b[32;1m*\x1b[0m Initialize Proc\n");
@@ -210,6 +238,20 @@ bool install()
 		fsInitialize();
 		pmdmntInitialize();
 		pmshellInitialize();
+		
+		//mount user
+		printf("\x1b[32;1m*\x1b[0m mount User\n");
+		consoleUpdate(NULL);
+		FsFileSystem myUser;
+		fsOpenBisFileSystem(&myUser, FsBisPartitionId_User, "");
+		fsdevMountDevice("myUser", myUser);
+
+		//mount system
+		printf("\x1b[32;1m*\x1b[0m mount system\n");
+		consoleUpdate(NULL);
+		FsFileSystem mySystem;
+		fsOpenBisFileSystem(&mySystem, FsBisPartitionId_System, "");
+		fsdevMountDevice("myssytem", mySystem);
 		
 		//terminate System proc
 		printf("\x1b[32;1m*\x1b[0m Kill System Services\n");
@@ -230,25 +272,10 @@ bool install()
 		pmshellTerminateProgram(0x0100000000000036);//creport
 		pmshellTerminateProgram(0x010000000000003A);//migration
 		pmshellTerminateProgram(0x010000000000003E);//olsc
-		pmshellTerminateProgram(0x0100000000001000);//qlaunch - make freeze? some times
 		pmshellTerminateProgram(0x0100000000001009);//miiEdit
-		
-		//serv test may freeze
-		printf("\x1b[32;1m*\x1b[0m Kill Extra Services\n");
-		consoleUpdate(NULL);
-/*		pmshellTerminateProgram(0x0100000000000020); //nfc
-		pmshellTerminateProgram(0x0100000000000021); //psc
-//		pmshellTerminateProgram(0x0100000000000023); //am    make freeze
-		pmshellTerminateProgram(0x0100000000000024); //ssl
-		pmshellTerminateProgram(0x010000000000002E); //pctl
-		pmshellTerminateProgram(0x010000000000002F); //npns
-		pmshellTerminateProgram(0x0100000000000034); //fatal
-//		pmshellTerminateProgram(0x0100000000000037); //ro   make freeze
-		pmshellTerminateProgram(0x0100000000000039); //sdb
-		pmshellTerminateProgram(0x010000000000003E); //olsc
-*/		pmshellTerminateProgram(0x0100000000002071); //posi (ns)
+		pmshellTerminateProgram(0x0100000000002071); //posi (ns)
 		pmshellTerminateProgram(0x0100000000000809); //used by sdb
-		
+
 		//critical serv 
 		printf("\x1b[32;1m*\x1b[0m terminate Critical Services\n");
 		consoleUpdate(NULL);
@@ -256,25 +283,8 @@ bool install()
 		pmshellTerminateProgram(0x0100000000000009);//settings - make switch freeze on airplane mode
 		pmshellTerminateProgram(0x010000000000000F);//nifm
 		pmshellTerminateProgram(0x0100000000000016);//Wlan
-	
-		//terminate Homebrew Serv
-		printf("\x1b[32;1m*\x1b[0m Kill Homebrew Services\n");
-		consoleUpdate(NULL);
-		pmshellTerminateProgram(0x420000000000000E);//FTP
-		pmshellTerminateProgram(0x0100000000000352);//Emuiio
-		pmshellTerminateProgram(0x200000000000010);//Lan Play
-		pmshellTerminateProgram(0x0100000000000FAF);//HDI
-		pmshellTerminateProgram(0x420000000000000B);//sysplay
-		pmshellTerminateProgram(0x00FF0000636C6BFF);//sys-clk
-		pmshellTerminateProgram(0x0100000000534C56);//ReverseNX
-		pmshellTerminateProgram(0x0100000000000069);//ReiSpoof
-		
-		//mount user
-		printf("\x1b[32;1m*\x1b[0m mount User\n");
-		consoleUpdate(NULL);
-		FsFileSystem myUser;
-		fsOpenBisFileSystem(&myUser, FsBisPartitionId_User, "");
-		fsdevMountDevice("myUser", myUser);
+		pmshellTerminateProgram(0x0100000000001000);//qlaunch
+
 		//delete user
 		printf("\x1b[32;1m*\x1b[0m Delete User\n");
 		consoleUpdate(NULL);
@@ -289,12 +299,6 @@ bool install()
 		fsdevUnmountDevice("myUser");
 		fsFsClose(&myUser);
 
-		//mount system
-		printf("\x1b[32;1m*\x1b[0m mount system\n");
-		consoleUpdate(NULL);
-		FsFileSystem mySystem;
-		fsOpenBisFileSystem(&mySystem, FsBisPartitionId_System, "");
-		fsdevMountDevice("myssytem", mySystem);
 		//delete system
 		printf("\x1b[32;1m*\x1b[0m Delete system\n");
 		consoleUpdate(NULL);
@@ -315,16 +319,11 @@ bool install()
 		fsExit();
 		socketExit();
 		fsdevUnmountAll();
-led_on();	
+		led_on();
+		
 			bpcInitialize();
 			if(init_slp())
-			{
-				reboot_to_payload();
-			}
-			else
-			{
-				bpcShutdownSystem();
-			}
+			{reboot_to_payload();}else{bpcShutdownSystem();}
 			bpcExit();
 return 0;
 }
@@ -376,7 +375,7 @@ int main(int argc, char **argv)
 					printf("\n\n\x1b[30;1m-------- LO DEVORARE TODO --------\x1b[0m\n\n");
 					printf("\x1b[30;1m PULSA \x1b[3%u;1m ZL\x1b[3%u;1m -\x1b[3%u;1m +\x1b[3%u;1m ZR\x1b[0m \x1b[30;1m JUNTOS PARA LIMPIAR\n\n",LT,minus,more,RT);
 					if(strlen(incognito()) == 0)//detect incognito
-					printf("\x1b[31;1m*\x1b[0m Desinstala Incognito %s(Requerido)\n\n",incognito());
+					printf("\x1b[33;1m*\x1b[0m Recuerda Desinstalar Incognito Desde Incognito-RCM\n\n");
 					if(!HasConnection())//detect airplane mode for evoid freeze
 					printf("\x1b[31;1m*\x1b[0m Desactiva el Modo Avion usar las 90DNS (Requerido)\n\n\x1b[33;1m*\x1b[0m DNS Primario: 163.172.141.219\n\n\x1b[33;1m*\x1b[0m DNS Secundario: 207.246.121.77\n\n");
 				}else{
@@ -386,7 +385,7 @@ int main(int argc, char **argv)
 					printf("\n\n\x1b[30;1m-------- I WILL CONSUME EVERYTHING --------\x1b[0m\n\n");
 					printf("PRESS \x1b[3%u;1m ZL\x1b[3%u;1m -\x1b[3%u;1m +\x1b[3%u;1m ZR \x1b[0m \x1b[30;1m TOGETHER TO CLEAN\n\n",LT,minus,more,RT);
 					if(strlen(incognito()) == 0)//detect incognito
-					printf("\x1b[31;1m*\x1b[0m Uninstall Incognito (Required)\n\n");
+					printf("\x1b[33;1m*\x1b[0m Remember Uninstall Incognito from Incognito-RCM\n\n");
 					if(!HasConnection())//detect airplane mode for evoid freeze
 					printf("\x1b[31;1m*\x1b[0m Disable Airplane mode and use 90DNS(Required)\n\n\x1b[32;1m*\x1b[0m Primary DNS: 163.172.141.219\n\n\x1b[32;1m*\x1b[0m Secondary DNS: 207.246.121.77\n\n");
 				}

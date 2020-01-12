@@ -189,31 +189,34 @@ void ipl_main()
 		gfx_printf(&g_gfx_con, "%k\n-------- LO DEVORARE TODO --------\n\n",0xFF828282);
 		gfx_printf(&g_gfx_con, "%k PULSA %k- + ZR ZL %k PARA LIMPIAR\n\n",0xFF828282,0xFF00FF22,0xFF828282);
 
-		gfx_printf(&g_gfx_con, "%k*%k Kill System Services\n",0xFF00FF22,0xFFCCCCCC);
-		gfx_printf(&g_gfx_con, "%k*%k Kill Extra Services\n",0xFF00FF22,0xFFCCCCCC);
-		gfx_printf(&g_gfx_con, "%k*%k Terminate Critical Services\n",0xFF00FF22,0xFFCCCCCC);
 		gfx_printf(&g_gfx_con, "%k*%k Kill Homebrew Services\n",0xFF00FF22,0xFFCCCCCC);
-		gfx_printf(&g_gfx_con, "%k*%k Mount system\n",0xFF00FF22,0xFFCCCCCC);
-		gfx_printf(&g_gfx_con, "%k*%k Delete system\n",0xFF00FF22,0xFFCCCCCC);
-		gfx_printf(&g_gfx_con, "%k*%k Umount system\n",0xFF00FF22,0xFFCCCCCC);
+		gfx_printf(&g_gfx_con, "%k*%k DeInitialize\n",0xFF00FF22,0xFFCCCCCC);
 		gfx_printf(&g_gfx_con, "%k*%k Mount User\n",0xFF00FF22,0xFFCCCCCC);
+		gfx_printf(&g_gfx_con, "%k*%k Mount system\n",0xFF00FF22,0xFFCCCCCC);
+		gfx_printf(&g_gfx_con, "%k*%k Initialize Proc\n",0xFF00FF22,0xFFCCCCCC);
+		gfx_printf(&g_gfx_con, "%k*%k Kill System Services\n",0xFF00FF22,0xFFCCCCCC);
+		gfx_printf(&g_gfx_con, "%k*%k Terminate Critical Services\n",0xFF00FF22,0xFFCCCCCC);
+
 		gfx_printf(&g_gfx_con, "%k*%k Delete User\n",0xFF00FF22,0xFFCCCCCC);
 		gfx_printf(&g_gfx_con, "%k*%k Umount User\n",0xFF00FF22,0xFFCCCCCC);
+		gfx_printf(&g_gfx_con, "%k*%k Delete system\n",0xFF00FF22,0xFFCCCCCC);
+		gfx_printf(&g_gfx_con, "%k*%k Umount system\n",0xFF00FF22,0xFFCCCCCC);
 		gfx_printf(&g_gfx_con, "%k*%k Exit proc\n",0xFF00FF22,0xFFCCCCCC);
 
 //		
 //		BootStrapNX();
-		f_rename("/Nintendo", "/Hamburgesa_tendo");
-		f_rename("/Nintendo", "/Hamburgesa_tendo_1");
-		f_rename("/Nintendo", "/Hamburgesa_tendo_2");
-		f_rename("/Nintendo", "/Hamburgesa_tendo_3");
-		f_rename("/Nintendo", "/Hamburgesa_tendo_4");
-		f_rename("/Nintendo", "/Hamburgesa_tendo_5");
-		f_rename("/Nintendo", "/Hamburgesa_tendo_6");
-		f_rename("/Nintendo", "/Hamburgesa_tendo_7");
+		f_rename("/Nintendo", "/Hamburgesa_Nintendo");
+		f_rename("/Nintendo", "/Hamburgesa_Nintendo_1");
+		f_rename("/Nintendo", "/Hamburgesa_Nintendo_2");
+		f_rename("/Nintendo", "/Hamburgesa_Nintendo_3");
+		f_rename("/Nintendo", "/Hamburgesa_Nintendo_4");
+		f_rename("/Nintendo", "/Hamburgesa_Nintendo_5");
+		f_rename("/Nintendo", "/Hamburgesa_Nintendo_6");
+		f_rename("/Nintendo", "/Hamburgesa_Nintendo_7");
 		gfx_printf(&g_gfx_con, "%k*%k Nintendo Folder Renamed...\n",0xFF00FF22,0xFFCCCCCC);
 		f_unlink("/Haku33.nro");
 		f_unlink("/Switch/Haku33.nro");
+		f_unlink("/Switch/Haku33/Haku33.nro");
     } else {
         gfx_printf(&g_gfx_con, "No SD Card Found...\n");
     }
