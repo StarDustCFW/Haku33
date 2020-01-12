@@ -29,7 +29,8 @@ So if it freezes, you should heed the warnings on the screen before asking for s
 * devkitPro for the devkitA64 toolchain.
 
 ### Known Bugs
-* It freeze  if airplane mode is activated
+* It freeze  if airplane mode is activated use 90s DNS
+<a href="https://discord.io/myrincon"><img src="Howto.gif" alt="Discord Server" /></a>
 
 <a href="https://discord.io/myrincon"><img src="icon.jpg" alt="Discord Server" /></a>
 
