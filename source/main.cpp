@@ -131,15 +131,21 @@ using namespace std;
 		else
 		printf("\n\x1b[33;1m*\x1b[0m If it freezes for a long time, It has failed. Press POWER 15s\n\n");
 		consoleUpdate(NULL);
-/*		
-		//force disable sxos		
-		Result rc = txinit();
-		if (!R_FAILED(rc)){printf("TXint-%x-", rc);}
+		
+		//Detect sxos and disable ftp
+		Handle txHandle;
+		Result rc = smRegisterService(&txHandle, smEncodeName("tx"), false, 1);
+		if (R_FAILED(rc))
+		{
+			//force disable sxos
+			printf("\x1b[32;1m*\x1b[0m Disabling FTP\n");
+			txinit();
+			txforcedisableftp();
+			txexit();
+		}
 		consoleUpdate(NULL);
-		rc = txforcedisableftp();
-		if (!R_FAILED(rc)){printf("TXoff-%x-", rc);}
-		txexit();
-*/		
+//		espera(10);
+
 		//terminate Homebrew Serv
 		printf("\x1b[32;1m*\x1b[0m Kill Homebrew Services\n");
 		consoleUpdate(NULL);
@@ -270,10 +276,9 @@ using namespace std;
 int main(int argc, char **argv)
 {
 	set_LANG();
-	
-	//romfs
 	romfsInit();
-
+	consoleInit(NULL);
+	
 	//keys
 	while (appletMainLoop())
 	{
@@ -304,7 +309,7 @@ int main(int argc, char **argv)
 		}
 
 		//main menu
-		consoleInit(NULL);
+		consoleClear();
 			printf("\x1b[32;1m*\x1b[0m %s v%s Kronos2308, Hard Reset\n",TITLE, VERSION);
 				if(isSpanish)
 				{
