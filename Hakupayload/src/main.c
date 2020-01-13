@@ -187,7 +187,7 @@ void ipl_main()
 		gfx_printf(&g_gfx_con, "%k SE REALIZARA UN HARD RESET LUEGO SE APAGARA LA CONSOLA\n\n",0xFF828282);
 		gfx_printf(&g_gfx_con, "%k SI NO SABES LO QUE HACES, PRESIONA B PARA ABORTAR \n\n",0xFF828282);
 		gfx_printf(&g_gfx_con, "%k\n-------- LO DEVORARE TODO --------\n\n",0xFF828282);
-		gfx_printf(&g_gfx_con, "%k PULSA %k- + ZR ZL %k PARA LIMPIAR\n\n",0xFF828282,0xFF00FF22,0xFF828282);
+		gfx_printf(&g_gfx_con, "%k PULSA %kZR - + ZL %k PARA LIMPIAR\n\n",0xFF828282,0xFF00FF22,0xFF828282);
 
 		gfx_printf(&g_gfx_con, "%k*%k Kill Homebrew Services\n",0xFF00FF22,0xFFCCCCCC);
 		gfx_printf(&g_gfx_con, "%k*%k DeInitialize\n",0xFF00FF22,0xFFCCCCCC);

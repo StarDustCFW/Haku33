@@ -130,15 +130,19 @@ using namespace std;
 		printf("\n\x1b[33;1m*\x1b[0m Si se congela mucho tiempo, Es que ha fallado. Pulsa POWER 15s \n\n");
 		else
 		printf("\n\x1b[33;1m*\x1b[0m If it freezes for a long time, It has failed. Press POWER 15s\n\n");
-	
-		//force disable sxos
-		txinit();
-		txforcedisableftp();
+		consoleUpdate(NULL);
+/*		
+		//force disable sxos		
+		Result rc = txinit();
+		if (!R_FAILED(rc)){printf("TXint-%x-", rc);}
+		consoleUpdate(NULL);
+		rc = txforcedisableftp();
+		if (!R_FAILED(rc)){printf("TXoff-%x-", rc);}
 		txexit();
-
+*/		
 		//terminate Homebrew Serv
 		printf("\x1b[32;1m*\x1b[0m Kill Homebrew Services\n");
-		consoleUpdate(NULL);		
+		consoleUpdate(NULL);
 		if (R_FAILED(pmshellTerminateProgram(0x420000000000000E))){printf("FTP-");}
 		if (R_FAILED(pmshellTerminateProgram(0x0100000000000352))){printf("Emuiio-");}
 		if (R_FAILED(pmshellTerminateProgram(0x4200000000000010))){printf("Lan Play-");}
@@ -152,7 +156,7 @@ using namespace std;
 		if (R_FAILED(pmshellTerminateProgram(0x0100000000000069))){printf("ReiSpoof-");}
 
 		//DeInitialize
-		printf("\x1b[32;1m*\x1b[0m DeInitialize\n");
+		printf("\n\x1b[32;1m*\x1b[0m DeInitialize\n");
 		consoleUpdate(NULL);
 		hidsysExit();
 		socketExit();
@@ -168,7 +172,7 @@ using namespace std;
 		setExit();
 		
 		//Initialize proc
-		printf("\x1b[32;1m*\x1b[0m Initialize Proc\n");
+		printf("\n\x1b[32;1m*\x1b[0m Initialize Proc\n");
 		consoleUpdate(NULL);
 		fsInitialize();
 		pmdmntInitialize();
@@ -212,7 +216,7 @@ using namespace std;
 		if (R_FAILED(pmshellTerminateProgram(0x0100000000000809))){printf("used by sdb-");}
 
 		//critical serv 
-		printf("\x1b[32;1m*\x1b[0m terminate Critical Services\n");
+		printf("\n\x1b[32;1m*\x1b[0m terminate Critical Services\n");
 		consoleUpdate(NULL);
 		if (R_FAILED(pmshellTerminateProgram(0x0100000000000012))){printf("bsdsockets-");}
 		if (R_FAILED(pmshellTerminateProgram(0x0100000000000009))){printf("settings-");}
@@ -220,10 +224,8 @@ using namespace std;
 		if (R_FAILED(pmshellTerminateProgram(0x0100000000000016))){printf("Wlan-");}
 		if (R_FAILED(pmshellTerminateProgram(0x0100000000001000))){printf("qlaunch-");}
 
-		espera(10);
-
 		//delete user
-		printf("\x1b[32;1m*\x1b[0m Delete User\n");
+		printf("\n\x1b[32;1m*\x1b[0m Delete User\n");
 		consoleUpdate(NULL);
 		fs::DeleteDir("myUser:/Contents/registered");
 		fs::DeleteDir("myUser:/Contents");
