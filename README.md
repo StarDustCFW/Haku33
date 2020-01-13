@@ -1,7 +1,9 @@
 <a href="https://discord.io/myrincon"><img src="https://discordapp.com/api/guilds/516631805621960704/embed.png" alt="Discord Server" /></a>
 
 ## Haku33
-Perform a Hard Reset of the switch, and leave it as if it had just left the box
+* Perform a Hard Reset of the switch, and leave it as if it had just left the box
+* Use 90s DNS
+<a href="https://discord.io/myrincon"><img src="Howto.gif" alt="Discord Server" /></a>
 
 ## Reason
 * In case you don't have a clean copy of the nand, clean it and start using all original or use emunand
@@ -30,7 +32,6 @@ So if it freezes, you should heed the warnings on the screen before asking for s
 
 ### Known Bugs
 * It freeze  if airplane mode is activated use 90s DNS
-<a href="https://discord.io/myrincon"><img src="Howto.gif" alt="Discord Server" /></a>
 
 <a href="https://discord.io/myrincon"><img src="icon.jpg" alt="Discord Server" /></a>
 
