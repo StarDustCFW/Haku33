@@ -21,6 +21,7 @@
 #include <cstring>
 #include <vector>
 #include <stdlib.h>
+#include "FileSystem.hpp"
 
 extern "C" {
 #include "reboot.h"
@@ -29,153 +30,84 @@ extern "C" {
 
 using namespace std;
 
-//traduction
-bool isSpanish = false;
-void set_LANG()
-{
-			setInitialize();
-			u64 lcode = 0;
-			SetLanguage lang;
-			setGetSystemLanguage(&lcode);
-			setMakeLanguage(lcode, &lang);
-				switch(lang)
-				{
-					case 5:
-					case 14:
-					isSpanish =  true;
-					   break;
-					default:
-					isSpanish =  false;
-						break;
-				}
-			setsysExit();
-}
-
-//ask to the switch for the serial detect incognito
-char *incognito(void) {
-	setInitialize();
-    setsysInitialize();
-	Result ret = 0;
-	static char serial[0x19];
-	if (R_FAILED(ret = setsysGetSerialNumber(serial)))
-	printf("setsysGetSerialNumber() failed: 0x%x.\n\n", ret);
-	setsysExit();
-	return serial;
-}
-
-
-	bool fileExists(const char* path)
+	void espera(u32 timeS)
 	{
-		FILE* f = fopen(path, "rb");
-		if (f)
-		{
-			fclose(f);
-			return true;
-		}
-		return false;
+		u32 cout = 0;
+		while (appletMainLoop()){cout++; if(cout >= timeS*1000000) break;}//1000000
 	}
 
-	bool IsExist(std::string Path) 
+	//traduction
+	bool isSpanish = false;
+	void set_LANG()
 	{
-		std::ifstream ifs(Path);
-		bool ex = ifs.good();
-		ifs.close();
-		return ex;
-	}
-
-	bool DirExists(const char* const path)
-	{
-		struct stat info;
-
-		int statRC = stat(path, &info);
-		if (statRC != 0)
-		{
-			if (errno == ENOENT) { return 0; } // something along the path does not exist
-			if (errno == ENOTDIR) { return 0; } // something in path prefix is not a dir
-			return false;
-		}
-
-		return (info.st_mode & S_IFDIR) ? true : false;
-	}
-
-	bool IsFile(std::string Path)
-	{
-		bool is = false;
-		struct stat st;
-		if (stat(Path.c_str(), &st) == 0) if (st.st_mode & S_IFREG) is = true;
-		return is;
-	}
-	void CreateFile(std::string Path)
-	{
-		std::ofstream ofs(Path);
-		ofs.close();
-	}
-	void CreateDir(std::string Path) 
-	{
-		mkdir(Path.c_str(), 777);
-	}
-	void DeleteFile(std::string Path)
-	{
-		if(IsExist(Path))
-			remove(Path.c_str());
-	}
-
-	void DeleteDir(std::string Path)
-	{
-		DIR *d = opendir(Path.c_str());
-		if (d)
-		{
-			struct dirent *dent;
-			while (true)
+		setInitialize();
+		u64 lcode = 0;
+		SetLanguage lang;
+		setGetSystemLanguage(&lcode);
+		setMakeLanguage(lcode, &lang);
+			switch(lang)
 			{
-				dent = readdir(d);
-				if (dent == NULL) break;
-				std::string nd = dent->d_name;
-				std::string pd = Path + "/" + nd;
-				if (IsFile(pd)) DeleteFile(pd);
-				else DeleteDir(pd);
+				case 5:
+				case 14:
+				isSpanish =  true;
+				break;
+				default:
+				isSpanish =  false;
+				break;
 			}
-		}
-		closedir(d);
+		setsysExit();
+	}
+
+	//ask to the switch for the serial detect incognito
+	char *incognito(void) 
+	{
+		setInitialize();
+		setsysInitialize();
+		Result ret = 0;
+		static char serial[0x19];
+		if (R_FAILED(ret = setsysGetSerialNumber(serial)))
+		printf("setsysGetSerialNumber() failed: 0x%x.\n\n", ret);
+		setsysExit();
+		return serial;
 	}
 
 	//Power on led
 	bool led_on(void)
 	{
-				Result rc=0;
-					s32 i;
-					s32 total_entries;
-					u64 UniquePadIds[2];
-					HidsysNotificationLedPattern pattern;
-					hidsysExit();
-					rc = hidsysInitialize();
-					if (R_FAILED(rc)) {
-						printf("hidsysInitialize(): 0x%x\n", rc);
-					}
+	Result rc=0;
+		s32 i;
+		s32 total_entries;
+		u64 UniquePadIds[2];
+		HidsysNotificationLedPattern pattern;
+		hidsysExit();
+		rc = hidsysInitialize();
+		if (R_FAILED(rc)) {
+			printf("hidsysInitialize(): 0x%x\n", rc);
+		}
 
 
-					memset(&pattern, 0, sizeof(pattern));
-					// Setup Breathing effect pattern data.
-					pattern.baseMiniCycleDuration = 0x8;             // 100ms.
-					pattern.totalMiniCycles = 0x2;                   // 3 mini cycles. Last one 12.5ms.
-					pattern.totalFullCycles = 0x0;                   // Repeat forever.
-					pattern.startIntensity = 0x2;                    // 13%.
+		memset(&pattern, 0, sizeof(pattern));
+		// Setup Breathing effect pattern data.
+		pattern.baseMiniCycleDuration = 0x8;             // 100ms.
+		pattern.totalMiniCycles = 0x2;                   // 3 mini cycles. Last one 12.5ms.
+		pattern.totalFullCycles = 0x0;                   // Repeat forever.
+		pattern.startIntensity = 0x2;                    // 13%.
 
-					pattern.miniCycles[0].ledIntensity = 0xF;        // 100%.
-					pattern.miniCycles[0].transitionSteps = 0xF;     // 15 steps. Transition time 1.5s.
-					pattern.miniCycles[0].finalStepDuration = 0x0;   // Forced 12.5ms.
-					pattern.miniCycles[1].ledIntensity = 0x2;        // 13%.
-					pattern.miniCycles[1].transitionSteps = 0xF;     // 15 steps. Transition time 1.5s.
-					pattern.miniCycles[1].finalStepDuration = 0x0;   // Forced 12.5ms.
-					
-					rc = hidsysGetUniquePadsFromNpad(hidGetHandheldMode() ? CONTROLLER_HANDHELD : CONTROLLER_PLAYER_1, UniquePadIds, 2, &total_entries);
+		pattern.miniCycles[0].ledIntensity = 0xF;        // 100%.
+		pattern.miniCycles[0].transitionSteps = 0xF;     // 15 steps. Transition time 1.5s.
+		pattern.miniCycles[0].finalStepDuration = 0x0;   // Forced 12.5ms.
+		pattern.miniCycles[1].ledIntensity = 0x2;        // 13%.
+		pattern.miniCycles[1].transitionSteps = 0xF;     // 15 steps. Transition time 1.5s.
+		pattern.miniCycles[1].finalStepDuration = 0x0;   // Forced 12.5ms.
+			
+		rc = hidsysGetUniquePadsFromNpad(hidGetHandheldMode() ? CONTROLLER_HANDHELD : CONTROLLER_PLAYER_1, UniquePadIds, 2, &total_entries);
 
-					if (R_SUCCEEDED(rc)) {
-						for(i=0; i<total_entries; i++) { // System will skip sending the subcommand to controllers where this isn't available.
-							rc = hidsysSetNotificationLedPattern(&pattern, UniquePadIds[i]);
-						}
-					}
-				hidsysExit();
+		if (R_SUCCEEDED(rc)) {
+			for(i=0; i<total_entries; i++) { // System will skip sending the subcommand to controllers where this isn't available.
+				rc = hidsysSetNotificationLedPattern(&pattern, UniquePadIds[i]);
+			}
+		}
+		hidsysExit();
 	return 0;
 	}
 
@@ -190,32 +122,35 @@ char *incognito(void) {
 	}
 
 
-//Clean Funtion
-bool install()
-{
+	//Clean Funtion
+	bool install()
+	{
 		//warning
 		if(isSpanish)
 		printf("\n\x1b[33;1m*\x1b[0m Si se congela mucho tiempo, Es que ha fallado. Pulsa POWER 15s \n\n");
 		else
 		printf("\n\x1b[33;1m*\x1b[0m If it freezes for a long time, It has failed. Press POWER 15s\n\n");
 	
-		//force disable sxos ftp for evoid  freeze
+		//force disable sxos
 		txinit();
 		txforcedisableftp();
 		txexit();
 
 		//terminate Homebrew Serv
 		printf("\x1b[32;1m*\x1b[0m Kill Homebrew Services\n");
-		consoleUpdate(NULL);
-		pmshellTerminateProgram(0x420000000000000E);//FTP
-		pmshellTerminateProgram(0x0100000000000352);//Emuiio
-		pmshellTerminateProgram(0x200000000000010);//Lan Play
-		pmshellTerminateProgram(0x0100000000000FAF);//HDI
-		pmshellTerminateProgram(0x420000000000000B);//sysplay
-		pmshellTerminateProgram(0x00FF0000636C6BFF);//sys-clk
-		pmshellTerminateProgram(0x0100000000534C56);//ReverseNX
-		pmshellTerminateProgram(0x0100000000000069);//ReiSpoof
-		
+		consoleUpdate(NULL);		
+		if (R_FAILED(pmshellTerminateProgram(0x420000000000000E))){printf("FTP-");}
+		if (R_FAILED(pmshellTerminateProgram(0x0100000000000352))){printf("Emuiio-");}
+		if (R_FAILED(pmshellTerminateProgram(0x4200000000000010))){printf("Lan Play-");}
+		if (R_FAILED(pmshellTerminateProgram(0x0100000000000BEF))){printf("Disk-USB-");}
+		if (R_FAILED(pmshellTerminateProgram(0x420000000000000B))){printf("SysPlay-");}
+		if (R_FAILED(pmshellTerminateProgram(0x00FF0000636C6BFF))){printf("sys-clk-");}
+		if (R_FAILED(pmshellTerminateProgram(0x690000000000000D))){printf("Sys-Con-");}
+		if (R_FAILED(pmshellTerminateProgram(0x00FF0000A53BB665))){printf("SysDVR-");}
+		if (R_FAILED(pmshellTerminateProgram(0x0100000000534C56))){printf("ReverseNX-");}
+		if (R_FAILED(pmshellTerminateProgram(0x0100000000000FAF))){printf("HDI-");}
+		if (R_FAILED(pmshellTerminateProgram(0x0100000000000069))){printf("ReiSpoof-");}
+
 		//DeInitialize
 		printf("\x1b[32;1m*\x1b[0m DeInitialize\n");
 		consoleUpdate(NULL);
@@ -256,42 +191,44 @@ bool install()
 		//terminate System proc
 		printf("\x1b[32;1m*\x1b[0m Kill System Services\n");
 		consoleUpdate(NULL);
-		pmshellTerminateProgram(0x010000000000000C);//btca	
-		pmshellTerminateProgram(0x010000000000000E);//friends
-		pmshellTerminateProgram(0x010000000000001E);//account
-		pmshellTerminateProgram(0x010000000000001F);//ns
-		pmshellTerminateProgram(0x0100000000000020);//nfc
-		pmshellTerminateProgram(0x0100000000000022);//capsrv
-		pmshellTerminateProgram(0x0100000000000024);//ssl
-		pmshellTerminateProgram(0x0100000000000025);//nim
-		pmshellTerminateProgram(0x010000000000002B);//erpt
-		pmshellTerminateProgram(0x010000000000002E);//pctl
-		pmshellTerminateProgram(0x010000000000002F);//npns
-		pmshellTerminateProgram(0x0100000000000030);//eupld
-		pmshellTerminateProgram(0x0100000000000033);//es
-		pmshellTerminateProgram(0x0100000000000036);//creport
-		pmshellTerminateProgram(0x010000000000003A);//migration
-		pmshellTerminateProgram(0x010000000000003E);//olsc
-		pmshellTerminateProgram(0x0100000000001009);//miiEdit
-		pmshellTerminateProgram(0x0100000000002071); //posi (ns)
-		pmshellTerminateProgram(0x0100000000000809); //used by sdb
+		if (R_FAILED(pmshellTerminateProgram(0x010000000000000C))){printf("btca-");}
+		if (R_FAILED(pmshellTerminateProgram(0x010000000000000E))){printf("friends-");}
+		if (R_FAILED(pmshellTerminateProgram(0x010000000000001E))){printf("account-");}
+		if (R_FAILED(pmshellTerminateProgram(0x010000000000001F))){printf("ns-");}
+		if (R_FAILED(pmshellTerminateProgram(0x0100000000000020))){printf("nfc-");}
+		if (R_FAILED(pmshellTerminateProgram(0x0100000000000022))){printf("capsrv-");}
+		if (R_FAILED(pmshellTerminateProgram(0x0100000000000024))){printf("ssl-");}
+		if (R_FAILED(pmshellTerminateProgram(0x0100000000000025))){printf("nim-");}
+		if (R_FAILED(pmshellTerminateProgram(0x010000000000002B))){printf("erpt-");}
+		if (R_FAILED(pmshellTerminateProgram(0x010000000000002E))){printf("pctl-");}
+		if (R_FAILED(pmshellTerminateProgram(0x010000000000002F))){printf("npns-");}
+		if (R_FAILED(pmshellTerminateProgram(0x0100000000000030))){printf("eupld-");}
+		if (R_FAILED(pmshellTerminateProgram(0x0100000000000033))){printf("es-");}
+		if (R_FAILED(pmshellTerminateProgram(0x0100000000000036))){printf("creport-");}
+		if (R_FAILED(pmshellTerminateProgram(0x010000000000003A))){printf("migration-");}
+		if (R_FAILED(pmshellTerminateProgram(0x010000000000003E))){printf("olsc-");}
+		if (R_FAILED(pmshellTerminateProgram(0x0100000000001009))){printf("miiEdit-");}
+		if (R_FAILED(pmshellTerminateProgram(0x0100000000002071))){printf("posi (ns)-");}
+		if (R_FAILED(pmshellTerminateProgram(0x0100000000000809))){printf("used by sdb-");}
 
 		//critical serv 
 		printf("\x1b[32;1m*\x1b[0m terminate Critical Services\n");
 		consoleUpdate(NULL);
-		pmshellTerminateProgram(0x0100000000000012);//bsdsockets - make switch freeze on sxos ftp
-		pmshellTerminateProgram(0x0100000000000009);//settings - make switch freeze on airplane mode
-		pmshellTerminateProgram(0x010000000000000F);//nifm
-		pmshellTerminateProgram(0x0100000000000016);//Wlan
-		pmshellTerminateProgram(0x0100000000001000);//qlaunch
+		if (R_FAILED(pmshellTerminateProgram(0x0100000000000012))){printf("bsdsockets-");}
+		if (R_FAILED(pmshellTerminateProgram(0x0100000000000009))){printf("settings-");}
+		if (R_FAILED(pmshellTerminateProgram(0x010000000000000F))){printf("nifm-");}
+		if (R_FAILED(pmshellTerminateProgram(0x0100000000000016))){printf("Wlan-");}
+		if (R_FAILED(pmshellTerminateProgram(0x0100000000001000))){printf("qlaunch-");}
+
+		espera(10);
 
 		//delete user
 		printf("\x1b[32;1m*\x1b[0m Delete User\n");
 		consoleUpdate(NULL);
-		DeleteDir("myUser:/Contents/registered");
-		DeleteDir("myUser:/Contents");
-		DeleteDir("myUser:/saveMeta");
-		DeleteDir("myUser:/save");
+		fs::DeleteDir("myUser:/Contents/registered");
+		fs::DeleteDir("myUser:/Contents");
+		fs::DeleteDir("myUser:/saveMeta");
+		fs::DeleteDir("myUser:/save");
 		//umount user
 		printf("\x1b[32;1m*\x1b[0m umount User\n");
 		consoleUpdate(NULL);
@@ -302,8 +239,8 @@ bool install()
 		//delete system
 		printf("\x1b[32;1m*\x1b[0m Delete system\n");
 		consoleUpdate(NULL);
-		DeleteDir("myssytem:/saveMeta");
-		DeleteDir("myssytem:/save");//perform the hard reset
+		fs::DeleteDir("myssytem:/saveMeta");
+		fs::DeleteDir("myssytem:/save");//perform the hard reset
 		//umount system
 		printf("\x1b[32;1m*\x1b[0m umount system\n");
 		consoleUpdate(NULL);
@@ -321,12 +258,12 @@ bool install()
 		fsdevUnmountAll();
 		led_on();
 		
-			bpcInitialize();
-			if(init_slp())
-			{reboot_to_payload();}else{bpcShutdownSystem();}
-			bpcExit();
-return 0;
-}
+		bpcInitialize();
+		if(init_slp())
+		{reboot_to_payload();}else{bpcShutdownSystem();}
+		bpcExit();
+	return 0;
+	}
 
 int main(int argc, char **argv)
 {
@@ -346,15 +283,15 @@ int main(int argc, char **argv)
 		u32 more = 0;
 		u32 LT = 0;
 		u32 RT = 0;
-				
-	if (kHeld & KEY_ZL)
-		LT = 4;
-	if (kHeld & KEY_ZR)
-		RT = 4;
-	if (kHeld & KEY_MINUS)
-		minus = 4;
-	if (kHeld & KEY_PLUS)
-		more = 4;
+	
+		if (kHeld & KEY_ZL)
+			LT = 4;
+		if (kHeld & KEY_ZR)
+			RT = 4;
+		if (kHeld & KEY_MINUS)
+			minus = 4;
+		if (kHeld & KEY_PLUS)
+			more = 4;
 
 		if (kHeld & KEY_ZL && kHeld & KEY_ZR && kHeld & KEY_MINUS && kHeld & KEY_PLUS)
 		{
@@ -402,7 +339,7 @@ int main(int argc, char **argv)
 		{
 			break;
 		}
-	}	
+	}
 
 	//cansel
 	fsExit();
