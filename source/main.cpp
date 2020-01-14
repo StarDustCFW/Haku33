@@ -49,13 +49,25 @@ using namespace std;
 			{
 				case 5:
 				case 14:
-				isSpanish =  true;
+				isSpanish = true;
 				break;
 				default:
-				isSpanish =  false;
+				isSpanish = false;
 				break;
 			}
 		setsysExit();
+	}
+
+	//sxos detection
+	bool issxos = false;
+	void set_SXOS()
+	{
+		Handle txHandle;
+		Result rc = smRegisterService(&txHandle, smEncodeName("tx"), false, 1);
+		if (R_FAILED(rc))
+		issxos = true;
+		else
+		smUnregisterService(smEncodeName("tx"));
 	}
 
 	//ask to the switch for the serial detect incognito
@@ -133,12 +145,10 @@ using namespace std;
 		consoleUpdate(NULL);
 		
 		//Detect sxos and disable ftp
-		Handle txHandle;
-		Result rc = smRegisterService(&txHandle, smEncodeName("tx"), false, 1);
-		if (R_FAILED(rc))
+		if (issxos)
 		{
 			//force disable sxos
-			printf("\x1b[32;1m*\x1b[0m Disabling FTP\n");
+			printf("\x1b[32;1m*\x1b[0m Disabling SXOS FTP\n");
 			txinit();
 			txforcedisableftp();
 			txexit();
@@ -276,6 +286,7 @@ using namespace std;
 int main(int argc, char **argv)
 {
 	set_LANG();
+	set_SXOS();
 	romfsInit();
 	consoleInit(NULL);
 	
@@ -321,7 +332,11 @@ int main(int argc, char **argv)
 					if(strlen(incognito()) == 0)//detect incognito
 					printf("\x1b[33;1m*\x1b[0m Recuerda Desinstalar Incognito Desde Incognito-RCM\n\n");
 					if(!HasConnection())//detect airplane mode for evoid freeze
-					printf("\x1b[31;1m*\x1b[0m Desactiva el Modo Avion usar las 90DNS (Requerido)\n\n\x1b[33;1m*\x1b[0m DNS Primario: 163.172.141.219\n\n\x1b[33;1m*\x1b[0m DNS Secundario: 207.246.121.77\n\n");
+					{
+						printf("\x1b[31;1m*\x1b[0m Desactiva el Modo Avion ");
+						if (!issxos)//extra warning if you are not on sxos
+							printf("usar las 90DNS (Requerido)\n\n\x1b[33;1m*\x1b[0m DNS Primario: 163.172.141.219\n\n\x1b[33;1m*\x1b[0m DNS Secundario: 207.246.121.77\n\n");
+					}
 				}else{
 					printf("\n\x1b[30;1m YOUR CONSOLE WILL BE COMPLETELY CLEANED: SAVES, GAMES, ETC  \x1b[0m\n");
 					printf("\n\x1b[30;1m A HARD RESET WILL BE PERFORMED AFTER THE CONSOLE WILL BE OFF \x1b[0m\n");
@@ -331,7 +346,11 @@ int main(int argc, char **argv)
 					if(strlen(incognito()) == 0)//detect incognito
 					printf("\x1b[33;1m*\x1b[0m Remember Uninstall Incognito from Incognito-RCM\n\n");
 					if(!HasConnection())//detect airplane mode for evoid freeze
-					printf("\x1b[31;1m*\x1b[0m Disable Airplane mode and use 90DNS(Required)\n\n\x1b[32;1m*\x1b[0m Primary DNS: 163.172.141.219\n\n\x1b[32;1m*\x1b[0m Secondary DNS: 207.246.121.77\n\n");
+					{
+						printf("\x1b[31;1m*\x1b[0m Disable Airplane mode ");
+						if (!issxos)//extra warning if you are not on sxos
+							printf("and use 90DNS(Required)\n\n\x1b[33;1m*\x1b[0m Primary DNS: 163.172.141.219\n\n\x1b[33;1m*\x1b[0m Secondary DNS: 207.246.121.77\n\n");
+					}
 				}
 		consoleUpdate(NULL);
 		
