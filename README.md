@@ -3,7 +3,8 @@
 ## Haku33
 * Perform a Hard Reset of the switch, and leave it as if it had just left the box
 * Use 90s DNS or delete all internet conections and turn off AirPlane mode
-<a href="https://discord.io/myrincon"><img src="Howto.gif" alt="Discord Server" /></a>
+
+<a href="https://raw.githubusercontent.com/StarDustCFW/Haku33/master/Howto.gif"><img src="Howto.gif" alt="Discord Server" height="162" width="262"/></a>
 
 ## Reason
 * In case you don't have a clean copy of the nand, clean it and start using all original or use emunand
