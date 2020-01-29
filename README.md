@@ -25,7 +25,7 @@ Keep in mind that this program will not UNBAN you, or will it make you immune to
 You will have a console as just out of the box that's it.
 So you can go online as long as you keep the console clean of cfw .
 * * It is a program that temporarily stops critical console services.
-So if it freezes, you should heed the warnings on the screen before asking for support.
+So if it freezes, you should heed the warnings on the screen before asking for [support](https://discord.io/myrincon).
 * * In case off freeze press 15s the Power and try again 
 * * I recommend having a backup of the nand for security reasons
 
@@ -40,3 +40,4 @@ So if it freezes, you should heed the warnings on the screen before asking for s
 
 # [Demostration video](https://youtu.be/X1VpT3DwN-E)
 # [Manual Method](https://youtu.be/9jV8iN7LJPY?list=PLNawpCFHdbXY-ZgF43vEJBk2IoweJfAlm)
+# [Support Chat](https://discord.io/myrincon)
