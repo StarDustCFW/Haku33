@@ -2,7 +2,7 @@
 
 ## Haku33
 * Perform a Hard Reset of the switch, and leave it as if it had just left the box
-* Use 90s DNS
+* Use 90s DNS or delete all internet conections and turn off AirPlane mode
 <a href="https://discord.io/myrincon"><img src="Howto.gif" alt="Discord Server" /></a>
 
 ## Reason
