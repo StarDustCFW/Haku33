@@ -22,6 +22,7 @@
 #include <vector>
 #include <stdlib.h>
 #include "FileSystem.hpp"
+#include "lang.hpp"
 
 extern "C" {
 #include "reboot.h"
@@ -29,45 +30,25 @@ extern "C" {
 }
 
 using namespace std;
+//Vars
+bool issxos = false;
+bool isEMU = false;
 
+	bool Check_Service(const char* name)
+	{
+		Handle txHandle;
+		Result rc = smRegisterService(&txHandle, smEncodeName(name), false, 1);
+		if (R_FAILED(rc))
+		return true;
+		else
+		smUnregisterService(smEncodeName(name));
+		return false;
+	}
+	
 	void espera(u32 timeS)
 	{
 		u32 cout = 0;
 		while (appletMainLoop()){cout++; if(cout >= timeS*1000000) break;}//1000000
-	}
-
-	//traduction
-	bool isSpanish = false;
-	void set_LANG()
-	{
-		setInitialize();
-		u64 lcode = 0;
-		SetLanguage lang;
-		setGetSystemLanguage(&lcode);
-		setMakeLanguage(lcode, &lang);
-			switch(lang)
-			{
-				case 5:
-				case 14:
-				isSpanish = true;
-				break;
-				default:
-				isSpanish = false;
-				break;
-			}
-		setsysExit();
-	}
-
-	//sxos detection
-	bool issxos = false;
-	void set_SXOS()
-	{
-		Handle txHandle;
-		Result rc = smRegisterService(&txHandle, smEncodeName("tx"), false, 1);
-		if (R_FAILED(rc))
-		issxos = true;
-		else
-		smUnregisterService(smEncodeName("tx"));
 	}
 
 	//ask to the switch for the serial detect incognito
@@ -138,17 +119,14 @@ using namespace std;
 	bool install()
 	{
 		//warning
-		if(isSpanish)
-		printf("\n\x1b[33;1m*\x1b[0m Si se congela mucho tiempo, Es que ha fallado. Pulsa POWER 15s \n\n");
-		else
-		printf("\n\x1b[33;1m*\x1b[0m If it freezes for a long time, It has failed. Press POWER 15s\n\n");
+		printf(LG.text9);
 		consoleUpdate(NULL);
 		
 		//Detect sxos and disable ftp
 		if (issxos)
 		{
 			//force disable sxos
-			printf("\x1b[32;1m*\x1b[0m Disabling SXOS FTP\n");
+			printf(LG.text0);
 			txinit();
 			txforcedisableftp();
 			txexit();
@@ -159,17 +137,17 @@ using namespace std;
 		//terminate Homebrew Serv
 		printf("\x1b[32;1m*\x1b[0m Kill Homebrew Services\n");
 		consoleUpdate(NULL);
-		if (R_FAILED(pmshellTerminateProgram(0x420000000000000E))){printf("FTP-");}
-		if (R_FAILED(pmshellTerminateProgram(0x0100000000000352))){printf("Emuiio-");}
-		if (R_FAILED(pmshellTerminateProgram(0x4200000000000010))){printf("Lan Play-");}
-		if (R_FAILED(pmshellTerminateProgram(0x0100000000000BEF))){printf("Disk-USB-");}
-		if (R_FAILED(pmshellTerminateProgram(0x420000000000000B))){printf("SysPlay-");}
-		if (R_FAILED(pmshellTerminateProgram(0x00FF0000636C6BFF))){printf("sys-clk-");}
-		if (R_FAILED(pmshellTerminateProgram(0x690000000000000D))){printf("Sys-Con-");}
-		if (R_FAILED(pmshellTerminateProgram(0x00FF0000A53BB665))){printf("SysDVR-");}
-		if (R_FAILED(pmshellTerminateProgram(0x0100000000534C56))){printf("ReverseNX-");}
-		if (R_FAILED(pmshellTerminateProgram(0x0100000000000FAF))){printf("HDI-");}
-		if (R_FAILED(pmshellTerminateProgram(0x0100000000000069))){printf("ReiSpoof-");}
+		if (R_SUCCEEDED(pmshellTerminateProgram(0x420000000000000E))){printf("FTP-");}
+		if (R_SUCCEEDED(pmshellTerminateProgram(0x0100000000000352))){printf("Emuiio-");}
+		if (R_SUCCEEDED(pmshellTerminateProgram(0x4200000000000010))){printf("Lan Play-");}
+		if (R_SUCCEEDED(pmshellTerminateProgram(0x0100000000000BEF))){printf("Disk-USB-");}
+		if (R_SUCCEEDED(pmshellTerminateProgram(0x420000000000000B))){printf("SysPlay-");}
+		if (R_SUCCEEDED(pmshellTerminateProgram(0x00FF0000636C6BFF))){printf("sys-clk-");}
+		if (R_SUCCEEDED(pmshellTerminateProgram(0x690000000000000D))){printf("Sys-Con-");}
+		if (R_SUCCEEDED(pmshellTerminateProgram(0x00FF0000A53BB665))){printf("SysDVR-");}
+		if (R_SUCCEEDED(pmshellTerminateProgram(0x0100000000534C56))){printf("ReverseNX-");}
+		if (R_SUCCEEDED(pmshellTerminateProgram(0x0100000000000FAF))){printf("HDI-");}
+		if (R_SUCCEEDED(pmshellTerminateProgram(0x0100000000000069))){printf("ReiSpoof-");}
 
 		//DeInitialize
 		printf("\n\x1b[32;1m*\x1b[0m DeInitialize\n");
@@ -228,7 +206,7 @@ using namespace std;
 		if (R_FAILED(pmshellTerminateProgram(0x010000000000003A))){printf("migration-");}
 		if (R_FAILED(pmshellTerminateProgram(0x010000000000003E))){printf("olsc-");}
 		if (R_FAILED(pmshellTerminateProgram(0x0100000000001009))){printf("miiEdit-");}
-		if (R_FAILED(pmshellTerminateProgram(0x0100000000002071))){printf("posi (ns)-");}
+		if (R_FAILED(pmshellTerminateProgram(0x0100000000002071))){printf("ns.use-");}
 		if (R_FAILED(pmshellTerminateProgram(0x0100000000000809))){printf("used by sdb-");}
 
 		//critical serv 
@@ -286,7 +264,8 @@ using namespace std;
 int main(int argc, char **argv)
 {
 	set_LANG();
-	set_SXOS();
+	issxos = Check_Service("tx");
+	isEMU = Check_Service("FS");
 	romfsInit();
 	consoleInit(NULL);
 	
@@ -321,37 +300,24 @@ int main(int argc, char **argv)
 
 		//main menu
 		consoleClear();
-			printf("\x1b[32;1m*\x1b[0m %s v%s Kronos2308, Hard Reset\n",TITLE, VERSION);
-				if(isSpanish)
-				{
-					printf("\n\x1b[30;1m TU CONSOLA SERA COMPLETAMENTE LIMPADA: SAVES, JUEGOS, ETC  \x1b[0m\n");
-					printf("\n\x1b[30;1m SE REALIZARA UN HARD RESET LUEGO SE APAGARA LA CONSOLA \x1b[0m\n");
-					printf("\n\x1b[30;1m SI NO SABES LO QUE HACES, PRESIONA B PARA ABORTAR \x1b[0m\n");
-					printf("\n\n\x1b[30;1m-------- LO DEVORARE TODO --------\x1b[0m\n\n");
-					printf("\x1b[30;1m PULSA \x1b[3%u;1m ZL\x1b[3%u;1m -\x1b[3%u;1m +\x1b[3%u;1m ZR\x1b[0m \x1b[30;1m JUNTOS PARA LIMPIAR\n\n",LT,minus,more,RT);
+			printf("\x1b[32;1m*\x1b[0m %s v%s Kronos2308, Hard Reset \n\n",TITLE, VERSION);
+			
+			if (isEMU) printf("\nEMU\n");
+					printf(LG.text1);
+					printf(LG.text2);
+					printf(LG.text3);
+					printf(LG.text4);
+					printf(LG.text5,LT,minus,more,RT);
 					if(strlen(incognito()) == 0)//detect incognito
-					printf("\x1b[33;1m*\x1b[0m Recuerda Desinstalar Incognito Desde Incognito-RCM\n\n");
+					printf(LG.text6);
 					if(!HasConnection())//detect airplane mode for evoid freeze
 					{
-						printf("\x1b[31;1m*\x1b[0m Desactiva el Modo Avion ");
+						printf(LG.text7);
 						if (!issxos)//extra warning if you are not on sxos
-							printf("usar las 90DNS (Requerido)\n\n\x1b[33;1m*\x1b[0m DNS Primario: 163.172.141.219\n\n\x1b[33;1m*\x1b[0m DNS Secundario: 207.246.121.77\n\n");
+							printf(LG.text8);
 					}
-				}else{
-					printf("\n\x1b[30;1m YOUR CONSOLE WILL BE COMPLETELY CLEANED: SAVES, GAMES, ETC  \x1b[0m\n");
-					printf("\n\x1b[30;1m A HARD RESET WILL BE PERFORMED AFTER THE CONSOLE WILL BE OFF \x1b[0m\n");
-					printf("\n\x1b[30;1m IF YOU DON'T KNOW WHAT YOU DO, PRESS B FOR ABORT \x1b[0m\n");
-					printf("\n\n\x1b[30;1m-------- I WILL CONSUME EVERYTHING --------\x1b[0m\n\n");
-					printf("PRESS \x1b[3%u;1m ZL\x1b[3%u;1m -\x1b[3%u;1m +\x1b[3%u;1m ZR \x1b[0m \x1b[30;1m TOGETHER TO CLEAN\n\n",LT,minus,more,RT);
-					if(strlen(incognito()) == 0)//detect incognito
-					printf("\x1b[33;1m*\x1b[0m Remember Uninstall Incognito from Incognito-RCM\n\n");
-					if(!HasConnection())//detect airplane mode for evoid freeze
-					{
-						printf("\x1b[31;1m*\x1b[0m Disable Airplane mode ");
-						if (!issxos)//extra warning if you are not on sxos
-							printf("and use 90DNS(Required)\n\n\x1b[33;1m*\x1b[0m Primary DNS: 163.172.141.219\n\n\x1b[33;1m*\x1b[0m Secondary DNS: 207.246.121.77\n\n");
-					}
-				}
+
+
 		consoleUpdate(NULL);
 		
 		//call clean after combo
