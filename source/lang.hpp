@@ -68,7 +68,7 @@ language LG;
 				LG.text4 = "\n\n\x1b[30;1m-------- LO DEVORARE TODO --------\x1b[0m\n\n";
 				LG.text5 = "PULSA \x1b[3%u;1m ZL\x1b[3%u;1m -\x1b[3%u;1m +\x1b[3%u;1m ZR \x1b[0m JUNTOS PARA LIMPIAR\n\n";
 				LG.text6 = "\x1b[33;1m*\x1b[0m Recuerda Desinstalar Incognito Desde Incognito-RCM\n\n";
-				LG.text7 = "\x1b[31;1m*\x1b[0m Desactiva el Modo Avion";
+				LG.text7 = "\x1b[31;1m*\x1b[0m Desactiva el Modo Avion ";
 				LG.text8 = "usar las 90DNS (Requerido)\n\n\x1b[33;1m*\x1b[0m DNS Primario: 163.172.141.219\n\n\x1b[33;1m*\x1b[0m DNS Secundario: 207.246.121.77\n\n";
 				LG.text9 = "\n\x1b[33;1m*\x1b[0m Si se congela mucho tiempo, Es que ha fallado. Pulsa POWER 15s \n\n";
 				LG.text0 = "\x1b[32;1m*\x1b[0m Desabilitando FTP de SXOS\n";
