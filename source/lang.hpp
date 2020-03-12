@@ -72,7 +72,7 @@ language LG;
 				LG.text8 = "usar las 90DNS (Requerido)\n\n\x1b[33;1m*\x1b[0m DNS Primario: 163.172.141.219\n\n\x1b[33;1m*\x1b[0m DNS Secundario: 207.246.121.77\n\n";
 				LG.text9 = "\n\x1b[33;1m*\x1b[0m Si se congela mucho tiempo, Es que ha fallado. Pulsa POWER 15s \n\n";
 				LG.text0 = "\x1b[32;1m*\x1b[0m Desabilitando FTP de SXOS\n";
-				LG.text11 = "\x1b[32;1m*\x1b[0m Desabilitando FTP de SXOS\n";
+				LG.text11 = "\x1b[32;1m*\x1b[0m Esto no esta pensado para uasrse en EMU\n";
 				break;
 				default: //all
 				LG.text1 = "\n\x1b[30;1m YOUR CONSOLE WILL BE COMPLETELY CLEANED: SAVES, GAMES, ETC  \x1b[0m\n";
@@ -85,7 +85,7 @@ language LG;
 				LG.text8 = "and use 90DNS(Required)\n\n\x1b[33;1m*\x1b[0m Primary DNS: 163.172.141.219\n\n\x1b[33;1m*\x1b[0m Secondary DNS: 207.246.121.77\n\n";
 				LG.text9 = "\n\x1b[33;1m*\x1b[0m If it freezes for a long time, It has failed. Press POWER 15s\n\n";
 				LG.text0 = "\x1b[32;1m*\x1b[0m Disabling SXOS FTP\n";
-				LG.text11 = "\x1b[32;1m*\x1b[0m Desabilitando FTP de SXOS\n";
+				LG.text11 = "\x1b[32;1m*\x1b[0m This is not intended to be used at EMU\n";
 				break;
 			}
 		setsysExit();

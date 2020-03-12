@@ -23,10 +23,10 @@
 #include <stdlib.h>
 #include "FileSystem.hpp"
 #include "lang.hpp"
-
 extern "C" {
 #include "reboot.h"
 #include "ftpdisable.h"
+
 }
 
 using namespace std;
@@ -115,7 +115,7 @@ bool isEMU = false;
 	}
 
 
-	//Clean Funtion
+	//Clean Function
 	bool install()
 	{
 		//warning
@@ -302,7 +302,7 @@ int main(int argc, char **argv)
 		consoleClear();
 			printf("\x1b[32;1m*\x1b[0m %s v%s Kronos2308, Hard Reset \n\n",TITLE, VERSION);
 			
-			if (isEMU) printf("\nEMU\n");
+			if (isEMU) printf(LG.text11);
 					printf(LG.text1);
 					printf(LG.text2);
 					printf(LG.text3);
@@ -326,7 +326,8 @@ int main(int argc, char **argv)
 			install();
 			break;
 		}
-
+		
+		//exit
 		if (kDown & KEY_A || kDown & KEY_B || kDown & KEY_Y || kDown & KEY_X)
 		{
 			break;
