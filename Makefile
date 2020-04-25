@@ -7,6 +7,8 @@ $(error "Please set DEVKITPRO in your environment. export DEVKITPRO=<path to>/de
 endif
 
 TOPDIR ?= $(CURDIR)
+LIBNX =	$(TOPDIR)/libnx
+include $(LIBNX)/switch_rules
 include $(DEVKITPRO)/libnx/switch_rules
 
 #---------------------------------------------------------------------------------
@@ -38,7 +40,7 @@ INCLUDES	:=	include
 EXEFS_SRC	:=	exefs_src
 APP_TITLE   :=	Haku33
 APP_AUTHOR  := 	Kronos2308
-APP_VERSION := 	2.8
+APP_VERSION := 	2.9
 ROMFS	:=	romfs
 
 #---------------------------------------------------------------------------------

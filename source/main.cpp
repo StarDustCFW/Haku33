@@ -148,6 +148,20 @@ bool isEMU = false;
 		if (R_SUCCEEDED(pmshellTerminateProgram(0x0100000000534C56))){printf("ReverseNX-");}
 		if (R_SUCCEEDED(pmshellTerminateProgram(0x0100000000000FAF))){printf("HDI-");}
 		if (R_SUCCEEDED(pmshellTerminateProgram(0x0100000000000069))){printf("ReiSpoof-");}
+		
+		if (R_SUCCEEDED(pmshellTerminateProgram(0x420000000000000E))){printf("FTP-");}
+		if (R_SUCCEEDED(pmshellTerminateProgram(0x0100000000000352))){printf("Emuiio-");}
+		if (R_SUCCEEDED(pmshellTerminateProgram(0x4200000000000010))){printf("LanPlay-");}
+		if (R_SUCCEEDED(pmshellTerminateProgram(0x0100000000000BEF))){printf("Disk-USB-");}
+		if (R_SUCCEEDED(pmshellTerminateProgram(0x4200000000000000))){printf("SysTune-");}
+		if (R_SUCCEEDED(pmshellTerminateProgram(0x690000000000000D))){printf("Sys-Con-");}
+		if (R_SUCCEEDED(pmshellTerminateProgram(0x420000000007E51A))){printf("TeslaOVL-");}
+		if (R_SUCCEEDED(pmshellTerminateProgram(0x00FF0000A53BB665))){printf("SysDVR-");}
+		if (R_SUCCEEDED(pmshellTerminateProgram(0x00FF0000636C6BFF))){printf("Sys-Clk-");}
+		if (R_SUCCEEDED(pmshellTerminateProgram(0x420000000000000B))){printf("SysPlay-");}
+		if (R_SUCCEEDED(pmshellTerminateProgram(0x0000000000534C56))){printf("ReverseNX-");}
+		if (R_SUCCEEDED(pmshellTerminateProgram(0x0100000000000069))){printf("ReiSpoof-");}
+		if (R_SUCCEEDED(pmshellTerminateProgram(0x0100000000000FAF))){printf("HDI-");}
 
 		//DeInitialize
 		printf("\n\x1b[32;1m*\x1b[0m DeInitialize\n");
@@ -307,7 +321,6 @@ int main(int argc, char **argv)
 					printf(LG.text2);
 					printf(LG.text3);
 					printf(LG.text4);
-					printf(LG.text5,LT,minus,more,RT);
 					if(strlen(incognito()) == 0)//detect incognito
 					printf(LG.text6);
 					if(!HasConnection())//detect airplane mode for evoid freeze
@@ -316,6 +329,7 @@ int main(int argc, char **argv)
 						if (!issxos)//extra warning if you are not on sxos
 							printf(LG.text8);
 					}
+					printf(LG.text5,LT,minus,more,RT);
 
 
 		consoleUpdate(NULL);
