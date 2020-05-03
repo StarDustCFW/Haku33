@@ -1,4 +1,4 @@
-printf("")
+printf("TegraExplorer Script")
 printf("Mounting SYSMMC...") 
 mmc_connect("SYSMMC")
 mmc_mount("SYSTEM")

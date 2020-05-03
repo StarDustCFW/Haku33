@@ -24,7 +24,7 @@ void gfx_clearscreen(){
 //    gfx_boxGrey(0, 0, 1279, 15, 0xFF);
     gfx_con_setpos(10, 10);
 //    gfx_printf("Tegraexplorer  | Battery: %3d%%\n", battery >> 8);
-	gfx_printf("%k*%k Haku33 v-.- Kronos2308, Hard Reset\n\n",0xFF00FF22,0xFFCCCCCC);
+	gfx_printf("%k*%k Haku33 v-.- Kronos2308, Hard Reset - Fork of TegraExplorer\n\n",0xFF00FF22,0xFFCCCCCC);
 	gfx_printf("%k TU CONSOLA SERA COMPLETAMENTE LIMPADA: SAVES, JUEGOS, ETC\n\n",0xFF828282);
 	gfx_printf("%k SE REALIZARA UN HARD RESET LUEGO SE APAGARA LA CONSOLA\n\n",0xFF828282);
 	gfx_printf("%k SI NO SABES LO QUE HACES, PRESIONA B PARA ABORTAR \n\n",0xFF828282);

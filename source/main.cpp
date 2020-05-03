@@ -29,9 +29,6 @@ extern "C" {
 }
 
 using namespace std;
-//Vars
-	//ask to the switch for the serial detect incognito
-
 	//Power on led
 	bool led_on(void)
 	{
@@ -129,7 +126,7 @@ int main(int argc, char **argv)
 			led_on();
 			bpcInitialize();
 			if(init_slp())
-			{reboot_to_payload();}else{bpcShutdownSystem();}
+			{reboot_to_payload();}else{break;}
 			bpcExit();
 			break;
 		}
