@@ -24,7 +24,6 @@ So you can go online as long as you keep the console clean of cfw.
 * * It is a program that temporarily stops critical console services.
 * * I recommend always have a backup of the nand for security reasons.
 
-[Support](https://discord.io/myrincon).
 
 
 ### Credits
@@ -32,10 +31,13 @@ So you can go online as long as you keep the console clean of cfw.
 * [TegraExplorer](https://github.com/suchmememanyskill/TegraExplorer) for his powerfull tool
 
 ### Known Bugs
-* Use 3.0 to evoid any frezzeng bug
-* Script parshare error(corrupt sd card,repair errors)
+* Use 3.0 to evoid any frezzing bugs
+* Script parshare error (corrupt sd card, repair errors)
 
 <a href="https://discord.io/myrincon"><img src="icon.jpg" alt="Discord Server" /></a>
+
+
+## [Support](https://discord.io/myrincon).
 
 # [Demostration video](https://youtu.be/X1VpT3DwN-E)
 # [Manual Method](https://youtu.be/9jV8iN7LJPY?list=PLNawpCFHdbXY-ZgF43vEJBk2IoweJfAlm)
