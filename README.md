@@ -2,9 +2,6 @@
 
 ## Haku33
 * Perform a Hard Reset of the switch, and leave it as if it had just left the box
-* Use 90s DNS or delete all internet conections and turn off AirPlane mode
-
-<a href="https://raw.githubusercontent.com/StarDustCFW/Haku33/master/Howto.gif"><img src="Howto.gif" alt="Discord Server" height="162" width="262"/></a>
 
 ## Reason
 * In case you don't have a clean copy of the nand, clean it and start using all original or use emunand
@@ -25,16 +22,18 @@ Keep in mind that this program will not UNBAN you, or will it make you immune to
 You will have a console as just out of the box, that's it.
 So you can go online as long as you keep the console clean of cfw.
 * * It is a program that temporarily stops critical console services.
-So if it freezes, you should heed the warnings on the screen before asking for [support](https://discord.io/myrincon).
-* * In case off freeze press 15s the Power and try again.
 * * I recommend always have a backup of the nand for security reasons.
+
+[Support](https://discord.io/myrincon).
 
 
 ### Credits
 * devkitPro for the devkitA64 toolchain.
+* [TegraExplorer](https://github.com/suchmememanyskill/TegraExplorer) for his powerfull tool
 
 ### Known Bugs
-* It freeze  if airplane mode is activated, Use 90s DNS or delete all internet conections
+* Use 3.0 to evoid any frezzeng bug
+* Script parshare error(corrupt sd card,repair errors)
 
 <a href="https://discord.io/myrincon"><img src="icon.jpg" alt="Discord Server" /></a>
 

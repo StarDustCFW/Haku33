@@ -109,7 +109,6 @@ int main(int argc, char **argv)
 		consoleClear();
 			printf("\x1b[32;1m*\x1b[0m %s v%s Kronos2308, Hard Reset \n\n",TITLE, VERSION);
 			
-//			if (isEMU) printf(LG.text11);
 					printf(LG.text1);
 					printf(LG.text2);
 					printf(LG.text3);
