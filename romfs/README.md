@@ -7,3 +7,6 @@
 * 1 Copia [Haku33.te](Haku33.te?raw=true) a a raiz de la SD
 * 2 injecta [Haku33_payload.bin](https://github.com/StarDustCFW/Haku33/raw/master/romfs/Haku33_payload.bin) via RCM
 * * No pedira una combinación de botones, usar con cuidado
+
+
+### [Releases](https://github.com/StarDustCFW/Haku33/releases/latest)
