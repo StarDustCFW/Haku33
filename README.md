@@ -29,7 +29,7 @@ So you can go online as long as you keep the console clean of cfw.
 ### Credits
 * devkitPro for the devkitA64 toolchain.
 * [TegraExplorer](https://github.com/suchmememanyskill/TegraExplorer) for his powerfull tool
-* TegraExporer for the payload script
+
 
 ### Known Bugs
 * Use 3.0 to evoid any frezzing bugs
