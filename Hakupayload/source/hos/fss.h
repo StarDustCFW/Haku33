@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2018 naehrwert
- * Copyright (c) 2018 CTCaer
+ * Copyright (c) 2019 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -15,36 +14,21 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _INI_H_
-#define _INI_H_
+#ifndef _FSS_H_
+#define _FSS_H_
 
-#include "../utils/types.h"
-#include "../utils/list.h"
+#include "hos.h"
 
-#define INI_CHOICE  3
-#define INI_CAPTION 5
-#define INI_CHGLINE 6
-#define INI_NEWLINE 0xFE
-#define INI_COMMENT 0xFF
-
-typedef struct _ini_kv_t
+typedef struct _fss0_sept_t
 {
-	char *key;
-	char *val;
-	link_t link;
-} ini_kv_t;
+	u32 kb;
+	ini_sec_t *cfg_sec;
+	void *sept_primary;
+	void *sept_secondary;
 
-typedef struct _ini_sec_t
-{
-	char *name;
-	link_t kvs;
-	link_t link;
-	u32 type;
-	u32 color;
-} ini_sec_t;
+} fss0_sept_t;
 
-int ini_parse(link_t *dst, const char *ini_path, bool is_dir);
-char *ini_check_payload_section(ini_sec_t *cfg);
+int parse_fss(launch_ctxt_t *ctxt, const char *path, fss0_sept_t *sept_ctxt);
+int load_sept_from_ffs0(fss0_sept_t *sept_ctxt);
 
 #endif
-

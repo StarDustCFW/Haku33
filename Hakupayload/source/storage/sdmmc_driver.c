@@ -29,6 +29,11 @@
 #include "../soc/t210.h"
 #include "../utils/util.h"
 
+#pragma GCC push_options
+#pragma GCC optimize ("Os")
+
+u32 sd_power_cycle_time_start;
+
 //#define DPRINTF(...) gfx_printf(__VA_ARGS__)
 #define DPRINTF(...)
 
@@ -1157,6 +1162,8 @@ int sdmmc_init(sdmmc_t *sdmmc, u32 id, u32 power, u32 bus_width, u32 type, int a
 	}
 	return 0;
 }
+
+#pragma GCC pop_options
 
 void sdmmc_end(sdmmc_t *sdmmc)
 {

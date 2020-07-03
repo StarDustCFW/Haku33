@@ -26,6 +26,10 @@
 
 #include "../gfx/gfx.h"
 
+u32 pkg2_newkern_ini1_val;
+u32 pkg2_newkern_ini1_start;
+u32 pkg2_newkern_ini1_end;
+
 /*#include "util.h"
 #define DPRINTF(...) gfx_printf(__VA_ARGS__)
 #define DEBUG_PRINTING*/
