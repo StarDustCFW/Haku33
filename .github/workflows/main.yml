@@ -19,12 +19,17 @@ jobs:
         sudo dpkg -i devkitpro-pacman.amd64.deb
         sudo dkp-pacman -S $(dkp-pacman -Ssq switch-*) --noconfirm
         
+    - name: Make Payload
+      run: |
+        export DEVKITPRO=/opt/devkitpro
+        export DEVKITARM=${DEVKITPRO}/devkitARM
+        export DEVKITPPC=${DEVKITPRO}/devkitPPC
+        export PATH=${DEVKITPRO}/tools/bin:$PATH
+        make -C ./Hakupayload
+        cp ./Hakupayload/output/TegraExplorer.bin ./romfs/Haku33_payload.bin
+		
     - name: Make app
       run: |
-        echo ##########################
-        echo #     SETTING PATH       #
-        echo ##########################
-        echo
         export DEVKITPRO=/opt/devkitpro
         export DEVKITARM=${DEVKITPRO}/devkitARM
         export DEVKITPPC=${DEVKITPRO}/devkitPPC
