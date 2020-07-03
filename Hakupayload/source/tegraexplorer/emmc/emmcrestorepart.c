@@ -17,7 +17,7 @@
 extern sdmmc_storage_t storage;
 extern emmc_part_t *system_part;
 
-int emmcRestorePart(char *path, sdmmc_storage_t *mmcstorage, emmc_part_t *part){
+int emmcRestorePart(char *path, sdmmc_storage_t *mmcstorage, emmc_part_t *part, bool warnings){
     FIL fp;
     FILINFO fno;
     u8 *buf;
@@ -32,7 +32,7 @@ int emmcRestorePart(char *path, sdmmc_storage_t *mmcstorage, emmc_part_t *part){
 
     gfx_printf("Initializing\r");
 
-    buf = calloc(16384, sizeof(u8));
+    buf = calloc(BUFSIZE, sizeof(u8));
 
     if (!buf){
         gfx_errDisplay("restore_emmc_part", ERR_MEM_ALLOC_FAILED, 1);
@@ -54,10 +54,10 @@ int emmcRestorePart(char *path, sdmmc_storage_t *mmcstorage, emmc_part_t *part){
 
     gfx_printf("Flashing %s\n", part->name);
 
-    if (totalSize < totalSizeDest){
+    if (totalSize < totalSizeDest && warnings){
         SWAPCOLOR(COLOR_ORANGE);
         gfx_printf("File is too small for destination.\nDo you want to flash it anyway?\n\nB to Cancel\n");
-        u8 btnres = gfx_makewaitmenu(
+        u32 btnres = gfx_makewaitmenu(
             "A to Confirm",
             3
         );
@@ -78,7 +78,7 @@ int emmcRestorePart(char *path, sdmmc_storage_t *mmcstorage, emmc_part_t *part){
     }
 
     while (totalSectors > 0){
-        num = MIN(totalSectors, 32);
+        num = MIN(totalSectors, 128);
 
         if ((res = f_read(&fp, buf, num * NX_EMMC_BLOCKSIZE, NULL))){
             gfx_errDisplay("restore_emmc_part", res, 5);
@@ -214,13 +214,13 @@ emmc_part_t *mmcFindPart(char *path, short mmcType){
     return NULL;
 }
 
-int mmcFlashFile(char *path, short mmcType){
+int mmcFlashFile(char *path, short mmcType, bool warnings){
     emmc_part_t *part;
     int res;
 
     part = mmcFindPart(path, mmcType);
     if (part != NULL){
-        res = emmcRestorePart(path, &storage, part);
+        res = emmcRestorePart(path, &storage, part, warnings);
         emummc_storage_set_mmc_partition(&storage, 0);
         return res;
     }

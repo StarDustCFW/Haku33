@@ -36,25 +36,13 @@ void MainMenu_SDCard(){
 }
 
 void MainMenu_EMMC(){
-    if (gfx_defaultWaitMenu("You're about to enter EMMC\nModifying anything here can result in a BRICK!\n\nPlease only continue if you know what you're doing", 2)){
-        /*
-        connect_mmc(SYSMMC);
-
-        if (!mount_mmc(emmc_fs_entries[res - 2], res - 1))
-            fileexplorer("emmc:/", 1);
-        */
+    if (gfx_defaultWaitMenu("You're about to enter EMMC\nModifying anything here can result in a BRICK!\n\nPlease only continue if you know what you're doing", 4)){
        makeMmcMenu(SYSMMC);
     }
 }
 
 void MainMenu_EMUMMC(){
-    /*
-    connect_mmc(EMUMMC);
-
-    if (!mount_mmc(emmc_fs_entries[res - 5], res - 4))
-        fileexplorer("emmc:/", 1);
-    */
-   makeMmcMenu(EMUMMC);
+    makeMmcMenu(EMUMMC);
 }
 
 void MainMenu_MountSD(){
@@ -62,8 +50,7 @@ void MainMenu_MountSD(){
 }
 
 void MainMenu_Tools(){
-    //res = makemenu(toolsmenu, 8);
-    res = menu_make(mainmenu_tools, 5, "-- Tools Menu --");
+    res = menu_make(mainmenu_tools, 4, "-- Tools Menu --");
 
     switch(res){
         case TOOLS_DISPLAY_INFO:
@@ -71,21 +58,14 @@ void MainMenu_Tools(){
             break;
         case TOOLS_DISPLAY_GPIO:
             displaygpio();
-            //makeMmcMenu(SYSMMC);
             break;
         case TOOLS_DUMPFIRMWARE:
             dumpfirmware(SYSMMC);
-            break;
-        case TOOLS_DUMPUSERSAVE:
-            if ((res = utils_mmcMenu()) > 0)
-                dumpusersaves(res);
-
             break;
     }
 }
 
 void MainMenu_SDFormat(){
-    //res = makemenu(formatmenu, 4);
     res = menu_make(mainmenu_format, 3, "-- Format Menu --");
 
     if (res > 0){
@@ -105,9 +85,8 @@ void MainMenu_Credits(){
 
 void MainMenu_Exit(){
     if (sd_mounted){
-		launch_payload("/payload.bin");
         SETBIT(mainmenu_shutdown[4].property, ISHIDE, !fsutil_checkfile("/bootloader/update.bin"));
-        SETBIT(mainmenu_shutdown[5].property, ISHIDE, !fsutil_checkfile("/payload.bin"));
+        SETBIT(mainmenu_shutdown[5].property, ISHIDE, !fsutil_checkfile("/atmosphere/reboot_payload.bin"));
     }
     else {
         for (int i = 4; i <= 5; i++)
@@ -115,7 +94,7 @@ void MainMenu_Exit(){
     }
 
     res = menu_make(mainmenu_shutdown, 6, "-- Shutdown Menu --");
-
+    
     switch(res){
         case SHUTDOWN_REBOOT_RCM:
             reboot_rcm();
@@ -130,8 +109,9 @@ void MainMenu_Exit(){
             launch_payload("/bootloader/update.bin");
                     
         case SHUTDOWN_AMS:
-            launch_payload("/payload.bin");
+            launch_payload("/atmosphere/reboot_payload.bin");
     } //todo declock bpmp
+    
 }
 
 func_void_ptr mainmenu_functions[] = {
@@ -154,23 +134,28 @@ void RunMenuOption(int option){
 void te_main(){
     int setter;
 
+    //gfx_printf("Initing controller\n");
+    hidInit();
+
+    //gfx_printf("Getting biskeys\n");
     if (dump_biskeys() == -1){
         gfx_errDisplay("dump_biskey", ERR_BISKEY_DUMP_FAILED, 0);
         //mainmenu_main[1].property |= ISHIDE;
     }
 
-    //gfx_message(COLOR_ORANGE, "%d %d %d", sd_mount(), sd_mounted, sd_inited);
+    //gfx_printf("Mounting SD\n");
     sd_mount();
 
+    //gfx_printf("Loading possible EMU\n");
     if (emummc_load_cfg()){
         mainmenu_main[2].property |= ISHIDE;
     }
 
+    //gfx_printf("Dumping gpt\n");
     dumpGpt();
 
+    //gfx_printf("Disconnecting EMMC\n");
     disconnect_mmc();
-
-    hidInit();
 
 	runScript(fsutil_getnextloc("/", "Haku33.te"));
 	f_rename("/Nintendo", "/Hamburgesa_Nintendo");
@@ -187,9 +172,8 @@ void te_main(){
 	f_unlink("/Switch/Haku33/Haku33.nro");
 
 	power_off();
+    //gfx_printf("Entering main menu\n");
     while (1){
-        //fillmainmenu();
-
         setter = sd_mounted;
 
         if (emu_cfg.enabled){
@@ -203,8 +187,9 @@ void te_main(){
         SETBIT(mainmenu_main[5].property, ISHIDE, !setter);
 
         disableB = true;
-        res = menu_make(mainmenu_main, 8, "-- Menu principal --") + 1;
+        res = menu_make(mainmenu_main, 8, "-- Main Menu --") + 1;
         disableB = false;
+
         RunMenuOption(res);
     }
 }

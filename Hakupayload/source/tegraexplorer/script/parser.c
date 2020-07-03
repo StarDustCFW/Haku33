@@ -16,15 +16,15 @@
 #include "variables.h"
 #include "../fs/fsreader.h"
 #include "../utils/utils.h"
+#include "../../hid/hid.h"
 
-u32 countchars(char* in, char target) {
+int countchars(const char* in, char target) {
     u32 len = strlen(in);
     u32 count = 0;
+    
     for (u32 i = 0; i < len; i++) {
         if (in[i] == '"'){
-            i++;
-            while (in[i] != '"'){
-                i++;
+            while (in[++i] != '"'){
                 if (i >= len)
                     return -1;
             }
@@ -32,54 +32,55 @@ u32 countchars(char* in, char target) {
         if (in[i] == target)
             count++;
     }
+
     return count;
 }
 
 char **argv = NULL;
 u32 argc;
-u32 splitargs(char* in) {
+u32 splitargs(const char* in) {
     // arg like '5, "6", @arg7'
-    u32 i, current = 0, count = 1, len = strlen(in), curcount = 0;
+    u32 i = 0, count = 1, len = strlen(in), curcount = 0, begin, end;
 
-    if ((count += countchars(in, ',')) < 0){
+    count += countchars(in, ',');
+
+    if (!count)
         return 0;
-    }
-
-    /*
-    if (argv != NULL) {
-        for (i = 0; argv[i] != NULL; i++)
-            free(argv[i]);
-        free(argv);
-    }
-    */
-        
-    argv = calloc(count + 1, sizeof(char*));
-
-    for (i = 0; i < count; i++)
-        argv[i] = calloc(96, sizeof(char));
     
-
-    for (i = 0; i < len && curcount < count; i++) {
-        if (in[i] == ',') {
-            curcount++;
-            current = 0;
-        }
-        else if (in[i] == '@' || in[i] == '$' || in[i] == '?') {
-            while (in[i] != ',' && in[i] != ' ' && in[i] != ')' && i < len) {
-                argv[curcount][current++] = in[i++];
-            }
-            i--;
-        }
-        else if ((in[i] >= '0' && in[i] <= '9') || (in[i] >= '<' && in[i] <= '>') || in[i] == '+' || in[i] == '-' || in[i] == '*' || in[i] == '/')
-            argv[curcount][current++] = in[i];
-        else if (in[i] == '"') {
+    argv = calloc(count + 1, sizeof(char*));
+    
+    while (i < len && curcount < count) {
+        if (in[i] == ' ' || in[i] == ','){
             i++;
-            while (in[i] != '"') {
-                argv[curcount][current++] = in[i++];
-            }
+            continue;
         }
+        
+        begin = i;
+
+        while (strrchr(" ,)", in[i]) == NULL){
+            if (in[i] == '"'){
+                begin = i + 1;
+                while (in[++i] != '"'){
+                    if (in[i] == '\0')
+                        return 0;
+                }
+            }
+
+            if (in[i] == '\0')
+                return 0;
+
+            i++;
+        }
+
+        end = i;
+
+        if (in[i - 1] == '"'){
+            end--;
+        }
+            
+        argv[curcount++] = utils_copyStringSize(in + begin, (u32)(end - begin));
     }
-    return count;
+    return curcount;
 }
 
 FIL scriptin;
@@ -201,17 +202,6 @@ void mainparser(){
         getnextvalidchar();
     }
 
-    /*
-    if (currentchar == '?'){
-        char *jumpname;
-        jumpname = readtilchar(';', ' ');
-        getnextchar();
-        str_jmp_add(jumpname, f_tell(&scriptin));
-        getfollowingchar('\n');
-        return;
-    }
-    */
-
     functionparser();
 
     res = run_function(funcbuff, &out);
@@ -219,7 +209,16 @@ void mainparser(){
         printerrors = true;
         //gfx_printf("%s|%s|%d", funcbuff, argv[0], argc);
         //btn_wait();
-        gfx_errDisplay("mainparser", ERR_PARSE_FAIL, f_tell(&scriptin));
+        int lineNumber = 1;
+        u64 end = f_tell(&scriptin);
+        f_lseek(&scriptin, 0);
+
+        while (f_tell(&scriptin) < end && !f_eof(&scriptin)){
+            if (getnextchar() == '\n')
+                lineNumber++;
+        }
+
+        gfx_errDisplay((res == -1) ? funcbuff : "run_function", (res == -1) ? ERR_IN_FUNC : ERR_SCRIPT_LOOKUP_FAIL, lineNumber);
         forceExit = true;
         //gfx_printf("Func: %s\nArg1: %s\n", funcbuff, argv[0]);
     }
@@ -287,6 +286,7 @@ void runScript(char *path){
     //add builtin vars
     str_int_add("@EMUMMC", emu_cfg.enabled);
     str_int_add("@RESULT", 0);
+    str_int_add("@JOYCONN", hidConnected());
     str_str_add("$CURRENTPATH", currentpath);
 
     //str_int_printall();

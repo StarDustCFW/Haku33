@@ -159,7 +159,7 @@ int dumpfirmware(int mmc){
 
     return fail;
 }
-
+/*
 void dumpusersaves(int mmc){
     connect_mmc(mmc);
     mount_mmc("USER", 2);
@@ -180,14 +180,15 @@ void dumpusersaves(int mmc){
     gfx_printf("Press any key to continue");
     hidWait();
 }
+*/
 
 int format(int mode){
     gfx_clearscreen();
     int res;
     bool fatalerror = false;
-    DWORD plist[] = {666, 61145088};
+    DWORD plist[] = {666, 61145088, 0, 0};
     u32 timer, totalsectors, alignedsectors, extrasectors;
-    BYTE work[FF_MAX_SS];
+    u8 *work;
     DWORD clustsize = 32768;
     BYTE formatoptions = 0;
     formatoptions |= (FM_FAT32);
@@ -197,6 +198,15 @@ int format(int mode){
 
     timer = get_tmr_s();
     totalsectors = sd_storage.csd.capacity;
+
+    gfx_printf("Initializing...\n");
+
+    work = calloc(BUFSIZE, sizeof(BYTE));
+
+    if (work == NULL){
+        gfx_errDisplay("format", ERR_MEM_ALLOC_FAILED, 0);
+        return 0;
+    }
 
     if (mode == FORMAT_EMUMMC){
         if (totalsectors < 83886080){
@@ -219,7 +229,7 @@ int format(int mode){
 
     if (!fatalerror){
         gfx_printf("\nPartitioning SD...\n");
-        res = f_fdisk(0, plist, &work);
+        res = f_fdisk(0, plist, work);
 
         if (res){
             gfx_printf("%kf_fdisk returned %d!\n", COLOR_RED, res);
@@ -231,7 +241,7 @@ int format(int mode){
 
     if (!fatalerror){
         gfx_printf("\n\nFormatting Partition1...\n");
-        res = f_mkfs("0:", formatoptions, clustsize, &work, sizeof work);
+        res = f_mkfs("0:", formatoptions, clustsize, work, BUFSIZE * sizeof(BYTE));
 
         if (res){
             gfx_printf("%kf_mkfs returned %d!\n", COLOR_RED, res);
@@ -240,6 +250,8 @@ int format(int mode){
         else
             gfx_printf("Smells like a formatted SD\n\n");
     }
+
+    free(work);
 
     sd_unmount();
 

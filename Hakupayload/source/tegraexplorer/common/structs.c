@@ -53,7 +53,9 @@ menu_entry fs_menu_file[] = {
     {"Lanzar Payload", COLOR_ORANGE, ISMENU},
     {"Lanzar Script", COLOR_YELLOW, ISMENU},
     {"Visor Hex", COLOR_GREEN, ISMENU},
-    {"\nExtraer BIS", COLOR_YELLOW, ISMENU}
+    {"\nExtraer BIS", COLOR_YELLOW, ISMENU},
+    {"Sign Save", COLOR_ORANGE, {ISMENU}}
+
 };
 
 menu_entry fs_menu_folder[] = {

@@ -21,9 +21,11 @@ enum utils_err_codes_te_call {
     ERR_EMMC_WRITE_FAILED,
     ERR_FILE_TOO_BIG_FOR_DEST,
     ERR_SD_EJECTED,
-    ERR_PARSE_FAIL,
+    ERR_SCRIPT_LOOKUP_FAIL,
     ERR_CANNOT_COPY_FILE_TO_FS_PART,
-    ERR_NO_DESTINATION
+    ERR_NO_DESTINATION,
+    ERR_INI_PARSE_FAIL,
+    ERR_IN_FUNC
 };
 
 extern const char *utils_err_codes_te[];
@@ -58,8 +60,7 @@ extern menu_entry mainmenu_shutdown[];
 enum mainmenu_tools_return {
     TOOLS_DISPLAY_INFO = 1,
     TOOLS_DISPLAY_GPIO,
-    TOOLS_DUMPFIRMWARE,
-    TOOLS_DUMPUSERSAVE
+    TOOLS_DUMPFIRMWARE
 };
 
 extern menu_entry mainmenu_tools[];
@@ -86,7 +87,8 @@ enum fs_menu_file_return {
     FILE_PAYLOAD,
     FILE_SCRIPT,
     FILE_HEXVIEW,
-    FILE_DUMPBIS
+    FILE_DUMPBIS,
+    FILE_SIGN
 };
 
 extern menu_entry fs_menu_file[];
