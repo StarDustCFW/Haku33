@@ -27,7 +27,7 @@ jobs:
         export PATH=${DEVKITPRO}/tools/bin:$PATH
         make -C ./Hakupayload
         cp ./Hakupayload/output/TegraExplorer.bin ./romfs/Haku33_payload.bin
-		
+        
     - name: Make app
       run: |
         export DEVKITPRO=/opt/devkitpro
