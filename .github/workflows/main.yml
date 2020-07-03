@@ -33,5 +33,5 @@ jobs:
         
     - uses: actions/upload-artifact@master
       with:
-        name: Build
-        path: Haku33.nro
+        name: Haku33
+        path: ./*
