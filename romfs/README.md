@@ -10,4 +10,5 @@
 * * No pedira una combinación de botones, usar con cuidado
 ### Para Limpiar emunand debera usar [Haku33.te](EmuKiller/Haku33.te?raw=true) este
 
+#### [Descargar-Downloads](https://github.com/StarDustCFW/Haku33/archive/master.zip)
 ### [Releases](https://github.com/StarDustCFW/Haku33/releases/latest)
