@@ -28,7 +28,7 @@ else() {
 }
 
 print("Wipe from: ")
-res = menu(menuOptions, 1)
+res = menu(menuOptions, 0)
 
 clearscreen()
 
@@ -59,9 +59,9 @@ if (mmcMount("SYSTEM")) {
 }
 
 color("RED")
-println("Are you sure you want to wipe everything?\nThis includes:\n- Saves\n- Game Data\n- All other data on the system!")
+println("Are you sure you want to wipe everything?\nThis includes:\n- Saves\n- Game Data\n- All other data on the system\n\nUse this only as a last resort!")
 color("YELLOW")
-wait(2000)
+wait(10000)
 
 println("Press X to continue\nPress any other button to exit")
 
@@ -130,6 +130,5 @@ fileDel("sd:/Haku33.nro")
 fileDel("sd:/Switch/Haku33.nro")
 fileDel("sd:/Switch/Haku33/Haku33.nro")
 
-println("\n\nPress Any button to full power off!")
 pause()
 launchPayload("sd:/poweroff.bin")

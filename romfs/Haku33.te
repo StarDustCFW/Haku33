@@ -20,55 +20,32 @@ println()
 
 BTN_X = 0x2
 
-if (_EMU) {
-	menuOptions = ["Exit", "Sysmmc", "Emummc"]
-} 
-else() {
-	menuOptions = ["Exit", "Sysmmc"]
-}
-
-print("Wipe from: ")
-res = menu(menuOptions, 0)
-
-clearscreen()
-
-if (res == 0){
-	exit()
-}
-
-if (res == 1){
-	println("Mounting Sysmmc")
-	mount = mmcConnect("SYSMMC")
-}
-
-if (res == 2){
-	println("Mounting Emummc")
-	mount = mmcConnect("EMUMMC")
-}
+println("Mounting Sysmmc")
+mount = mmcConnect("SYSMMC")
 
 if (mount){
 	println("Error connecting mmc!")
 	pause()
-	exit()
+	launchPayload("sd:/poweroff.bin")
 }
 
 if (mmcMount("SYSTEM")) {
 	println("Failed to mount SYSTEM")
 	pause()
-	exit()
+	launchPayload("sd:/poweroff.bin")
 }
 
 color("RED")
-println("Are you sure you want to wipe everything?\nThis includes:\n- Saves\n- Game Data\n- All other data on the system\n\nUse this only as a last resort!")
+println("Are you sure you want to wipe everything?\nThis includes:\n- Saves\n- Game Data\n- All other data on the system!")
 color("YELLOW")
-wait(10000)
+wait(2000)
 
 println("Press X to continue\nPress any other button to exit")
 
 start = pause() & BTN_X
 if (!start){
 	color("WHITE")
-	exit()
+	launchPayload("sd:/poweroff.bin")
 }
 
 color("WHITE")
@@ -102,7 +79,7 @@ color("RED")
 if (mmcMount("USER")){
 	println("Failed to mount USER")
 	pause()
-	exit()
+	launchPayload("sd:/poweroff.bin")
 }
 
 toDel = ["Album", "Contents", "save", "saveMeta", "temp"]
@@ -130,5 +107,6 @@ fileDel("sd:/Haku33.nro")
 fileDel("sd:/Switch/Haku33.nro")
 fileDel("sd:/Switch/Haku33/Haku33.nro")
 
+println("\n\nPress Any button to full power off!")
 pause()
 launchPayload("sd:/poweroff.bin")
