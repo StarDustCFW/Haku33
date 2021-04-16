@@ -58,7 +58,7 @@ bool init_slp()
     if (R_FAILED(rc)) {
         can_reboot = false;
     } else {
-        FILE *f = fopen("romfs:/Haku33_payload.bin", "rb");
+        FILE *f = fopen("romfs:/TegraExplorer.bin", "rb");
         if (f == NULL) {
             can_reboot = false;
         } else {

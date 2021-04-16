@@ -21,7 +21,7 @@
 #include <cstring>
 #include <vector>
 #include <stdlib.h>
-#include "FileSystem.hpp"
+#include "led.hpp"
 #include "lang.hpp"
 extern "C" {
 #include "reboot.h"
@@ -29,60 +29,32 @@ extern "C" {
 }
 
 using namespace std;
-	//Power on led
-	bool led_on(void)
-	{
-	Result rc=0;
-		s32 i;
-		s32 total_entries;
-		u64 UniquePadIds[2];
-		HidsysNotificationLedPattern pattern;
-		hidsysExit();
-		rc = hidsysInitialize();
-		if (R_FAILED(rc)) {
-			printf("hidsysInitialize(): 0x%x\n", rc);
-		}
-
-
-		memset(&pattern, 0, sizeof(pattern));
-		// Setup Breathing effect pattern data.
-		pattern.baseMiniCycleDuration = 0x8;             // 100ms.
-		pattern.totalMiniCycles = 0x2;                   // 3 mini cycles. Last one 12.5ms.
-		pattern.totalFullCycles = 0x0;                   // Repeat forever.
-		pattern.startIntensity = 0x2;                    // 13%.
-
-		pattern.miniCycles[0].ledIntensity = 0xF;        // 100%.
-		pattern.miniCycles[0].transitionSteps = 0xF;     // 15 steps. Transition time 1.5s.
-		pattern.miniCycles[0].finalStepDuration = 0x0;   // Forced 12.5ms.
-		pattern.miniCycles[1].ledIntensity = 0x2;        // 13%.
-		pattern.miniCycles[1].transitionSteps = 0xF;     // 15 steps. Transition time 1.5s.
-		pattern.miniCycles[1].finalStepDuration = 0x0;   // Forced 12.5ms.
-			
-		rc = hidsysGetUniquePadsFromNpad(hidGetHandheldMode() ? CONTROLLER_HANDHELD : CONTROLLER_PLAYER_1, UniquePadIds, 2, &total_entries);
-
-		if (R_SUCCEEDED(rc)) {
-			for(i=0; i<total_entries; i++) { // System will skip sending the subcommand to controllers where this isn't available.
-				rc = hidsysSetNotificationLedPattern(&pattern, UniquePadIds[i]);
-			}
-		}
-		hidsysExit();
-	return 0;
-	}
-
+void copy_me(string origen, string destino) {
+	ifstream source(origen, ios::binary);
+	ofstream dest(destino, ios::binary);
+	dest << source.rdbuf();
+	source.close();
+	dest.close();
+}
 
 int main(int argc, char **argv)
 {
 	set_LANG();
 	romfsInit();
 	consoleInit(NULL);
+	PadState pad;
+	padConfigureInput(8, HidNpadStyleSet_NpadStandard);
+    padInitializeDefault(&pad);
 	
 	//keys
 	while (appletMainLoop())
 	{
-	    hidScanInput();
-        u64 kDown = hidKeysDown(CONTROLLER_P1_AUTO);
-        u64 kHeld = hidKeysHeld(CONTROLLER_P1_AUTO);
+	    //hidScanInput();
+		padUpdate(&pad);
+        u64 kDown = padGetButtonsDown(&pad);
+        u64 kHeld = padGetButtons(&pad);
 
+		
 		u32 minus = 0;
 		u32 more = 0;
 		u32 LT = 0;
@@ -121,8 +93,9 @@ int main(int argc, char **argv)
 		//call clean after combo
 		if (kHeld & KEY_ZL && kHeld & KEY_ZR && kHeld & KEY_MINUS && kHeld & KEY_PLUS)
 		{
-			fs::copyFile("romfs:/Haku33.te", "/Haku33.te");
-			led_on();
+			copy_me("romfs:/Haku33.te", "/startup.te");
+			copy_me("romfs:/poweroff.bin", "/poweroff.bin");
+			led_on(1);
 			bpcInitialize();
 			if(init_slp())
 			{reboot_to_payload();}else{break;}
