@@ -2,7 +2,7 @@
 * 1 Copy [startup.te](startup.te?raw=true) and Copy [poweroff.bin](poweroff.bin)  to the SD Root
 * 2 Inject The payload [TegraExplorer.bin](https://github.com/StarDustCFW/Haku33/raw/master/romfs/TegraExplorer.bin)
 * * No button input needed, Caution
-### For clean emunand use [Haku33.te](EmuKiller/Haku33.te?raw=true) This one
+### For clean emunand use [startup.te](EmuKiller/startup.te?raw=true) This one
 
 ## ES
 * 1 Copia [startup.te](startup.te?raw=true) y Copia [poweroff.bin](poweroff.bin) a la raiz de la SD
