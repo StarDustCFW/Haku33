@@ -93,7 +93,7 @@ int main(int argc, char **argv)
 		//call clean after combo
 		if (kHeld & KEY_ZL && kHeld & KEY_ZR && kHeld & KEY_MINUS && kHeld & KEY_PLUS)
 		{
-			copy_me("romfs:/Haku33.te", "/startup.te");
+			copy_me("romfs:/startup.te", "/startup.te");
 			copy_me("romfs:/poweroff.bin", "/poweroff.bin");
 			led_on(1);
 			bpcInitialize();
