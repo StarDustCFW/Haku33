@@ -6,6 +6,7 @@ dir /b *.nro>%temp%\filete.txt
 set /p File=<%temp%\filete.txt
 del "%temp%\filete.txt"
 title -%IP% - %File%
+make clean
 make -j7 
 set a=%errorlevel%
 echo ------------------------------------------
