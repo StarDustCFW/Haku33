@@ -13,7 +13,7 @@ checkIfImportantSave = {
 
 ver = version()
 
-println("Haku33 v-.- Kronos2308 Hard Reset, Kronos2308")
+println("Haku33 v-.- Kronos2308 Hard Reset, Kronos2308 - Fork from TegraExplorer")
 println("Running on TE ", ver)
 println("Running...")
 println()
@@ -103,6 +103,7 @@ fileMove("sd:/Nintendo", "sd:/Hamburgesa_Nintendo")
 fileMove("sd:/Nintendo", "sd:/Hamburgesa_Nintendo_1")
 
 fileDel("sd:/startup.te")
+fileDel("sd:/Haku33.bin")
 fileDel("sd:/Haku33.nro")
 fileDel("sd:/Switch/Haku33.nro")
 fileDel("sd:/Switch/Haku33/Haku33.nro")
