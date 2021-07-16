@@ -20,8 +20,27 @@ println()
 
 BTN_X = 0x2
 
-println("Mounting Sysmmc")
-mount = mmcConnect("SYSMMC")
+if (_EMU) {
+	print("A to Continue")
+	print("Wipe from: ")
+	menuOptions = ["Sysmmc", "Emummc"]
+	res = menu(menuOptions, 0)
+} 
+else() {
+	res = 0
+}
+
+clearscreen()
+
+if (res == 0){
+	println("Mounting Sysmmc")
+	mount = mmcConnect("SYSMMC")
+}
+
+if (res == 1){
+	println("Mounting Emummc")
+	mount = mmcConnect("EMUMMC")
+}
 
 if (mount){
 	println("Error connecting mmc!")
@@ -102,8 +121,8 @@ println("\n\nCleaning!")
 fileMove("sd:/Nintendo", "sd:/Hamburgesa_Nintendo")
 fileMove("sd:/Nintendo", "sd:/Hamburgesa_Nintendo_1")
 
-fileDel("sd:/startup.te")
 fileDel("sd:/Haku33.bin")
+fileDel("sd:/startup.te")
 fileDel("sd:/Haku33.nro")
 fileDel("sd:/Switch/Haku33.nro")
 fileDel("sd:/Switch/Haku33/Haku33.nro")
