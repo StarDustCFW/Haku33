@@ -32,9 +32,11 @@
 #define IRAM_PAYLOAD_MAX_SIZE 0x24000
 static u8 g_reboot_payload[IRAM_PAYLOAD_MAX_SIZE];
 char Logs[2024];
+bool isXSOS;
 
 extern "C" {
 #include "ams_bpc.h"
+#include "reboot.h"
 }
 
 using namespace std;
@@ -64,7 +66,18 @@ void copy_me(string origen, string destino) {
 	dest.close();
 }
 
-static void reboot_to_payload(void) {
+bool txIsAvailable() {
+    auto srv_name = smEncodeName("tx");
+    Handle tmph = 0;
+    auto rc = smRegisterService(&tmph, srv_name, false, 1);
+    if(R_FAILED(rc)) {
+        return true;
+    }
+    smUnregisterService(srv_name);
+return false;
+}
+
+static void reboot_to_payload_AMS(void) {
     Result rc = amsBpcSetRebootPayload(g_reboot_payload, IRAM_PAYLOAD_MAX_SIZE);
     if (R_FAILED(rc)) {
         sprintf(Logs," Failed to set reboot payload: 0x%x\n", rc);
@@ -84,7 +97,7 @@ void CheckHardware()
 	}
 }
 
-bool can_reboot = true;
+bool can_reboot_AMS = true;
 void SetupClean (){
 	if (is_patched){
 		led_on(1);
@@ -102,7 +115,11 @@ void SetupClean (){
 		copy_me("romfs:/startup.te", "/startup.te");
 		copy_me("romfs:/poweroff.bin", "/poweroff.bin");
 		copy_me("romfs:/TegraExplorer.bin", "/Haku33.bin");
-		if (can_reboot) { reboot_to_payload();}
+		if  (isXSOS){
+			bpcInitialize();
+			if(init_slp()){reboot_to_payload();}
+			bpcExit();
+		}else if (can_reboot_AMS) { reboot_to_payload_AMS();}
 	}
 }
 
@@ -118,42 +135,43 @@ int main(int argc, char **argv)
     padInitializeDefault(&pad);
 
     Result rc = 0;
+	bool isXSOS = txIsAvailable();
+	if  (!isXSOS){
+		if (R_FAILED(rc = setsysInitialize())) {
+			sprintf(Logs," Failed to initialize set:sys: 0x%x\n", rc);
+			can_reboot_AMS = false;
+		}
+		else {
+			if (is_patched) {
+				sprintf(Logs,LG.text8 );
+				can_reboot_AMS = false;
+			}
+		}
 
-    if (R_FAILED(rc = setsysInitialize())) {
-        sprintf(Logs," Failed to initialize set:sys: 0x%x\n", rc);
-        can_reboot = false;
-    }
-    else {
-        if (is_patched) {
-            sprintf(Logs,LG.text8 );
-            can_reboot = false;
-        }
-    }
+		if (can_reboot_AMS && R_FAILED(rc = spsmInitialize())) {
+			sprintf(Logs," Failed to initialize spsm: 0x%x\n", rc);
+			can_reboot_AMS = false;
+		}
 
-    if (can_reboot && R_FAILED(rc = spsmInitialize())) {
-        sprintf(Logs," Failed to initialize spsm: 0x%x\n", rc);
-        can_reboot = false;
-    }
+		if (can_reboot_AMS) {
+			smExit(); //Required to connect to ams:bpc
+			if R_FAILED(rc = amsBpcInitialize()) {
+				sprintf(Logs," Failed to initialize ams:bpc: 0x%x\n", rc);
+				can_reboot_AMS = false;
+			}
+		}
 
-    if (can_reboot) {
-        smExit(); //Required to connect to ams:bpc
-        if R_FAILED(rc = amsBpcInitialize()) {
-            sprintf(Logs," Failed to initialize ams:bpc: 0x%x\n", rc);
-            can_reboot = false;
-        }
-    }
-
-    if (can_reboot) {
-        FILE *f = fopen("romfs:/TegraExplorer.bin", "rb");
-        if (f == NULL) {
-            sprintf(Logs," Failed to open atmosphere/romfs:/TegraExplorer.bin!\n");
-            can_reboot = false;
-        } else {
-            fread(g_reboot_payload, 1, sizeof(g_reboot_payload), f);
-            fclose(f);
-        }
-    }
-	
+		if (can_reboot_AMS) {
+			FILE *f = fopen("romfs:/TegraExplorer.bin", "rb");
+			if (f == NULL) {
+				sprintf(Logs," Failed to open atmosphere/romfs:/TegraExplorer.bin!\n");
+				can_reboot_AMS = false;
+			} else {
+				fread(g_reboot_payload, 1, sizeof(g_reboot_payload), f);
+				fclose(f);
+			}
+		}
+	}
 	//keys
 	while (appletMainLoop())
 	{
