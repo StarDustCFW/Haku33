@@ -137,6 +137,7 @@ void SetupClean (){
 		copy_me("romfs:/ini/Haku33.bmp", "/bootloader/res/Haku33.bmp");
 		copy_me("romfs:/ini/Haku33.ini", "/bootloader/ini/Haku33.ini");
 		copy_me("romfs:/hekate_keys.ini", "/bootloader/hekate_keys.ini");
+		spsmInitialize();
 		spsmShutdown(true);
 	}else{
 		led_on(1);
