@@ -29,11 +29,8 @@ pr("Done!\nDeleting user dirs...")ud=["Album","Contents","save","saveMeta","temp
 if(mount("USER")){p("Mount failed!")pe()}
 ud.foreach("x"){pr("\n"+x,"")if(deldir("bis:/"+x)){p("Dir deletion failed")pe()}mkdir("bis:/"+x)}
 mkdir("bis:/Contents/placehld")mkdir("bis:/Contents/registered")
-color(0x00FF00)p("\n\nDone!")pause()
-
-color("GREEN")
-println("\n\nDone!")
-println("\n\nCleaning!")
+color(0x00FF00)
+p("\n\nCleaning!")
 
 movefile("sd:/Nintendo", "sd:/Hamburgesa_Nintendo")
 movefile("sd:/Nintendo", "sd:/Hamburgesa_Nintendo_1")
@@ -44,6 +41,7 @@ delfile("sd:/Haku33.nro")
 delfile("sd:/Switch/Haku33.nro")
 delfile("sd:/Switch/Haku33/Haku33.nro")
 
-println("\n\nPress Any button to full power off!")
+p("\n\nDone!")
+p("\n\nPress Any button to full power off!")
 pause()
 power(3)
