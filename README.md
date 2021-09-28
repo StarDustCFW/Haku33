@@ -1,6 +1,6 @@
 <a href="https://discord.io/myrincon"><img src="https://discordapp.com/api/guilds/516631805621960704/embed.png" alt="Discord Server" /></a>
 
-## Haku33
+## <img style="display:inline" src="icon.jpg" width="50"/> Haku33 
 * Perform a Hard Reset of the switch, and leave it as if it had just left the box
 
 ## Reason
