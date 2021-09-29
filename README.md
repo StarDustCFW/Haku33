@@ -13,10 +13,14 @@
 * It is true that it is not 100% safe, but the people who have tested it have not  been banned yet [Reference](https://youtu.be/9jV8iN7LJPY?list=PLNawpCFHdbXY-ZgF43vEJBk2IoweJfAlm)
 * Haku33 is a simplification of this [method of clean](https://youtu.be/9jV8iN7LJPY?list=PLNawpCFHdbXY-ZgF43vEJBk2IoweJfAlm) 
 * If you have a clean backup of the Nand, it is better use that,
-* IPatched(Mariko) Are supported but used under your own risk.
+
 * If your console is Banned there is nothing to do
 * This will completely clean your switch, so you will lose everything
 
+## Ipatched(Mariko) Are supported but used under your own risk.
+Mariko consoles cannot reboot to the payload , so they use sxgear boot.dat to load the payload
+* Haku33 overwrite the boot.ini and boot.dat in Mariko so you may have to copy that files again
+* * I don't have a Mariko console to test, be sure of report any bug
 
 ### Note:
 Keep in mind that this program will not UNBAN you, or will it make you immune to BAN.
