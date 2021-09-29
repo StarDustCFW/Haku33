@@ -8,7 +8,7 @@
 
 ## Disclaimer
 * It is advisable to make a backup before using it, since despite being well tested, failures can occur.
-* I am not responsable of bricks, melted switch, plasma explotions or full immolation
+* I am not responsable of bricks, melted switch, nuclear explotions or full aniquilation
 * The premise is elimination. Can it be the lack of information that makes you get banned? So far the case has not happened.
 * It is true that it is not 100% safe, but the people who have tested it have not  been banned yet [Reference](https://youtu.be/9jV8iN7LJPY?list=PLNawpCFHdbXY-ZgF43vEJBk2IoweJfAlm)
 * Haku33 is a simplification of this [method of clean](https://youtu.be/9jV8iN7LJPY?list=PLNawpCFHdbXY-ZgF43vEJBk2IoweJfAlm) 
