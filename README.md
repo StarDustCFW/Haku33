@@ -34,9 +34,8 @@ So you can go online as long as you keep the console clean of cfw.
 
 
 ### Known Bugs
-* Use 3.0 to evoid any frezzing bugs
-* Black screen use [RCM Mode](https://github.com/StarDustCFW/Haku33/tree/master/romfs)
-* Script parshare error (corrupt sd card, repair errors)
+
+
 
 <a href="https://discord.io/myrincon"><img src="icon.jpg" alt="Discord Server" /></a>
 
