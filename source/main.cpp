@@ -131,12 +131,17 @@ void SetupClean (){
 	copy_me("romfs:/startup.te", "/startup.te");
 	if (is_patched){
 		led_on(1);
+		//force boot
+		copy_me("romfs:/boot.dat", "/boot.dat");
+		copy_me("romfs:/boot.ini", "boot.ini");
+		//copy keys
 		mkdir("sdmc:/bootloader",0777);
+		copy_me("romfs:/hekate_keys.ini", "/bootloader/hekate_keys.ini");
+		//copy Start
 		mkdir("sdmc:/bootloader/res",0777);
 		mkdir("sdmc:/bootloader/ini",0777);
 		copy_me("romfs:/ini/Haku33.bmp", "/bootloader/res/Haku33.bmp");
 		copy_me("romfs:/ini/Haku33.ini", "/bootloader/ini/Haku33.ini");
-		copy_me("romfs:/hekate_keys.ini", "/bootloader/hekate_keys.ini");
 		spsmInitialize();
 		spsmShutdown(true);
 	}else{
