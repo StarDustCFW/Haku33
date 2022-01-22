@@ -6,12 +6,11 @@ pe={pause() exit()}
 println("Haku33 Kronos2308 Hard Reset, Kronos2308 - Fork from TegraExplorer")
 wait={t=timer()while(timer()<(t+tw)){print("Wait for",(t+tw-timer()/1000),"seconds \r")}}
 p("System wiper\n")
-op=["Exit","Wipe sysmmc"].copy()
-if (emu()){op+"Wipe emummc"}
+op=["Wipe Console"].copy()
+if (emu()){op+"Wipe emunand only"}
 r=menu(op,0)clear()
-if(r==0){exit()}
-if(r==1){p("Selected sysmmc")mount=mountsys}
-if(r==2){p("Selected emummc")mount=mountemu}
+if(r==0){p("Selected sysmmc")mount=mountsys}
+if(r==1){p("Selected emummc")mount=mountemu}
 if(mount("SYSTEM")){p("Mount failed!")pe()}
 color(0xFF0000)
 p("Are you sure you want to wipe everything?\nThis includes:\n- Saves\n- Game Data\n- All other data on the system\n\nUse this only as a last resort!")
