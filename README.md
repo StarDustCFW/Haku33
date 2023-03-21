@@ -18,9 +18,10 @@
 * This will completely clean your switch, so you will lose everything
 
 ## Ipatched(Mariko) Are supported but used under your own risk.
-Mariko consoles cannot reboot to the payload , so they use sxgear boot.dat to load the payload
-* Haku33 overwrite the boot.ini and boot.dat in Mariko so you may have to copy that files again
+Mariko consoles cannot reboot to the payload , so to load the payload Haku33 have to Overwrite some files on sd
+* Haku33 Support Mariko in part and not suport clean emummc
 * * I don't have a Mariko console to test, be sure of report any bug
+* * if get a black screen, Press power like 3 times to make the console Wipe an boot
 
 ### Note:
 Keep in mind that this program will not UNBAN you, or will it make you immune to BAN.
@@ -34,7 +35,7 @@ So you can go online as long as you keep the console clean of cfw.
 
 
 ### Known Bugs
-
+* Mariko Not support Tegra explorer video
 
 
 <a href="https://discord.io/myrincon"><img src="icon.jpg" alt="Discord Server" /></a>
