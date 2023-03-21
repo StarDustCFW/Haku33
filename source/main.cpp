@@ -108,6 +108,14 @@ void close_Services()
 	psmExit();
 }
 
+bool IsExist(std::string Path) 
+{
+    std::ifstream ifs(Path);
+    bool ex = ifs.good();
+    ifs.close();
+    return ex;
+}
+
 void copy_me(string origen, string destino) {
 	ifstream source(origen, ios::binary);
 	ofstream dest(destino, ios::binary);
@@ -128,23 +136,30 @@ void CheckHardware()
 
 void SetupClean (){
 	if (is_patched){
-		//force boot
+        
+		led_on(2);
+
+		//force boot sxcore
 		copy_me("romfs:/boot.dat", "/boot.dat");
 		copy_me("romfs:/boot.ini", "/boot.ini");
+        
+		//force boot HWFLY
+        copy_me("sdmc:/payload.bin","sdmc:/payload.bin.bak");
+        copy_me("romfs:/TegraExplorer.bin", "/payload.bin");
+
 		//copy keys
 		mkdir("sdmc:/bootloader",0777);
 		copy_me("romfs:/hekate_keys.ini", "/bootloader/hekate_keys.ini");
-		//copy Start
-		mkdir("sdmc:/bootloader/res",0777);
-		mkdir("sdmc:/bootloader/ini",0777);
-        rename("/payload.bin","/payload.bin.bak");
-        copy_me("romfs:/TegraExplorer.bin", "/payload.bin");
+
+		//copy Script
         copy_me("romfs:/startup_mariko.te", "/startup.te");
+        
 		led_on(1);
 		spsmInitialize();
 		spsmShutdown(true);
 	}else{
-        copy_me("romfs:/TegraExplorer.bin", "/TegraExplorer.bin");
+        //Erista boot
+		led_on(2);
         copy_me("romfs:/startup.te", "/startup.te");
 		led_on(1);
 		bpcInitialize();
@@ -163,7 +178,7 @@ int main(int argc, char **argv)
 	PadState pad;
 	padConfigureInput(8, HidNpadStyleSet_NpadStandard);
     padInitializeDefault(&pad);
-
+    bool keysok = IsExist("/switch/prod.keys");
     Result rc = 0;
 
 	//keys
@@ -208,15 +223,22 @@ int main(int argc, char **argv)
 				printf("\n\n %s",LG.text7);
 			} 
 			printf("\n\x1b[31;1m%s \x1b[0m ",Logs);
+            if (is_patched && !keysok){
+                printf(LG.text12);
+            }
 			printf(LG.text5);
 
 
 		consoleUpdate(NULL);
-		
+
 		//call clean after combo
 		if (kHeld & KEY_A)
 		{
-			SetupClean();
+            if (is_patched){
+                if (keysok){
+                    SetupClean();
+                }
+			} else SetupClean();
 			//break;
 		}
 		

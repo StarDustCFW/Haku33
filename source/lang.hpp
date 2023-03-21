@@ -33,8 +33,8 @@ typedef struct {
 	const char* text9;
 	const char* text0;
 	const char* text11;
-/*	const char* text12;
-	const char* text;
+	const char* text12;
+/*	const char* text;
 	const char* text;
 	const char* text;
 	const char* text;
@@ -71,8 +71,9 @@ language LG;
 				LG.text7 = "\x1b[33;1m*\x1b[0m Luego del Reinicio ve a Hekate -> More configs -> Haku33\n\n";
 				LG.text8 = " No se puede Reiniciar al Payload en una consola Mariko\n";
 				LG.text9 = "\n\x1b[33;1m*\x1b[0m Si se congela mucho tiempo, Es que ha fallado. Pulsa POWER 15s \n\ny haslo de nuevo\n\n";
-				LG.text0 = "\x1b[32;1m*\x1b[0m Desabilitando FTP de SXOS\n";
-				LG.text11 = "\x1b[32;1m*\x1b[0m Esto no esta pensado para uasrse en EMU\n";
+				LG.text0 = "\x1b[32;1m*\x1b[0m Deshabilitando FTP de SXOS\n";
+				LG.text11 = "\x1b[32;1m*\x1b[0m Esto no esta pensado para usarse en EMU\n";
+				LG.text12 = "\x1b[32;1m*\x1b[0m NO Existe /switch/prod.keys, usa LockPick_RCM\n";
 				break;
 				default: //all
 				LG.text1 = "\n\x1b[30;1m YOUR CONSOLE WILL BE COMPLETELY CLEANED: SAVES, GAMES, ETC  \x1b[0m\n";
@@ -86,6 +87,7 @@ language LG;
 				LG.text9 = "\n\x1b[33;1m*\x1b[0m If it freezes for a long time, It has failed. Press POWER 15s \n\nand try again \n\n";
 				LG.text0 = "\x1b[32;1m*\x1b[0m Disabling SXOS FTP\n";
 				LG.text11 = "\x1b[32;1m*\x1b[0m This is not intended to be used at EMU\n";
+				LG.text12 = "\x1b[32;1m*\x1b[0m /switch/prod.keys does not exist, use LockPick_RCM\n";
 				break;
 			}
 		setsysExit();

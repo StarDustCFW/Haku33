@@ -2,14 +2,12 @@
 is=["8000000000000120","8000000000000047"]
 p=println
 pr=print
-pe={pause() exit()}
+pe={pause() exit() movefile("sd:/payload.bin.bak", "sd:/payload.bin")}
 println("Haku33 Kronos2308 Hard Reset, Kronos2308 - Fork from TegraExplorer")
 wait={t=timer()while(timer()<(t+tw)){print("Wait for",(t+tw-timer()/1000),"seconds \r")}}
 p("System wiper\n")
 mount=mountsys
 if(mount("SYSTEM")){p("Mount failed!")pe()}
-color(0x0000FF)
-p("Press power to wipe, any other key to exit")a=pause()if(!a.power){exit()}clear()
 color(0xFF0000)
 pr("Deleting system saves... ")
 f=readdir("bis:/save")
@@ -30,6 +28,7 @@ delfile("sd:/startup.te")
 delfile("sd:/Haku33.nro")
 delfile("sd:/Switch/Haku33.nro")
 delfile("sd:/Switch/Haku33/Haku33.nro")
+delfile("sd:/payload.bin")
 movefile("sd:/payload.bin.bak", "sd:/payload.bin")
 
 p("\n\nDone!")
