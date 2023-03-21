@@ -127,24 +127,25 @@ void CheckHardware()
 }
 
 void SetupClean (){
-	copy_me("romfs:/TegraExplorer.bin", "/Haku33.bin");
-	copy_me("romfs:/startup.te", "/startup.te");
 	if (is_patched){
-		led_on(1);
 		//force boot
 		copy_me("romfs:/boot.dat", "/boot.dat");
-		copy_me("romfs:/boot.ini", "boot.ini");
+		copy_me("romfs:/boot.ini", "/boot.ini");
 		//copy keys
 		mkdir("sdmc:/bootloader",0777);
 		copy_me("romfs:/hekate_keys.ini", "/bootloader/hekate_keys.ini");
 		//copy Start
 		mkdir("sdmc:/bootloader/res",0777);
 		mkdir("sdmc:/bootloader/ini",0777);
-		copy_me("romfs:/ini/Haku33.bmp", "/bootloader/res/Haku33.bmp");
-		copy_me("romfs:/ini/Haku33.ini", "/bootloader/ini/Haku33.ini");
+        rename("/payload.bin","/payload.bin.bak");
+        copy_me("romfs:/TegraExplorer.bin", "/payload.bin");
+        copy_me("romfs:/startup_mariko.te", "/startup.te");
+		led_on(1);
 		spsmInitialize();
 		spsmShutdown(true);
 	}else{
+        copy_me("romfs:/TegraExplorer.bin", "/TegraExplorer.bin");
+        copy_me("romfs:/startup.te", "/startup.te");
 		led_on(1);
 		bpcInitialize();
 		if(init_slp()){reboot_to_payload();}

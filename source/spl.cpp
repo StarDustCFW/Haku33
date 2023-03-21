@@ -44,7 +44,7 @@ namespace spl
 
         if (R_FAILED(ret = splGetConfig(SplConfigItem_HardwareType, &hardware_type)))
         {
-            return hardware[4];
+            return hardware[6];
         }
         else
             return hardware[hardware_type];
