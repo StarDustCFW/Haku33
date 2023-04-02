@@ -2,7 +2,7 @@
 is=["8000000000000120","8000000000000047"]
 p=println
 pr=print
-pe={pause() exit() movefile("sd:/payload.bin.bak", "sd:/payload.bin")}
+pe={copyfile("sd:/payload.bin.bak", "sd:/payload.bin") pause() exit()}
 println("Haku33 Kronos2308 Hard Reset, Kronos2308 - Fork from TegraExplorer")
 wait={t=timer()while(timer()<(t+tw)){print("Wait for",(t+tw-timer()/1000),"seconds \r")}}
 p("System wiper\n")
@@ -22,6 +22,7 @@ p("\n\nCleaning!")
 
 movefile("sd:/Nintendo", "sd:/Hamburgesa_Nintendo")
 movefile("sd:/Nintendo", "sd:/Hamburgesa_Nintendo_1")
+movefile("sd:/Nintendo", "sd:/Hamburgesa_Nintendo_2")
 
 delfile("sd:/TegraExplorer.bin")
 delfile("sd:/startup.te")
@@ -32,5 +33,5 @@ delfile("sd:/payload.bin")
 movefile("sd:/payload.bin.bak", "sd:/payload.bin")
 
 p("\n\nDone!")
-p("\n\nPress Any button to full power off!")
+p("\n\nPower off!")
 power(3)

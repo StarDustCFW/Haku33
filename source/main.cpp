@@ -220,7 +220,7 @@ int main(int argc, char **argv)
 			printf(LG.text3);
 			printf(LG.text4);
 			if (is_patched){
-				printf("\n\n %s",LG.text7);
+				printf("\n\n %s",LG.text8);
 			} 
 			printf("\n\x1b[31;1m%s \x1b[0m ",Logs);
             if (is_patched && !keysok){
@@ -234,11 +234,14 @@ int main(int argc, char **argv)
 		//call clean after combo
 		if (kHeld & KEY_A)
 		{
+/*
             if (is_patched){
                 if (keysok){
                     SetupClean();
                 }
 			} else SetupClean();
+*/            
+            SetupClean();
 			//break;
 		}
 		
