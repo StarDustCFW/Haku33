@@ -11,6 +11,7 @@
 static alignas(0x1000) u8 g_reboot_payload[IRAM_PAYLOAD_MAX_SIZE];
 static alignas(0x1000) u8 g_ff_page[0x1000];
 static alignas(0x1000) u8 g_work_page[0x1000];
+bool can_reboot = true;
 
 void do_iram_dram_copy(void *buf, uintptr_t iram_addr, size_t size, int option) {
     memcpy(g_work_page, buf, size);
@@ -41,9 +42,19 @@ static void clear_iram(void) {
     }
 }
 
-void reboot_to_payload(void) {
+void reboot_to_payload(const char* payload) {
     clear_iram();
     
+    FILE *f = fopen(payload, "rb");
+    if (f == NULL) {
+        can_reboot = false;
+        return 0;
+    } else {
+        can_reboot = true;
+        fread(g_reboot_payload, 1, sizeof(g_reboot_payload), f);
+        fclose(f);
+    }
+
     for (size_t i = 0; i < IRAM_PAYLOAD_MAX_SIZE; i += 0x1000) {
         copy_to_iram(IRAM_PAYLOAD_BASE + i, &g_reboot_payload[i], 0x1000);
     }
@@ -53,18 +64,11 @@ void reboot_to_payload(void) {
 
 bool init_slp()
 {
-    bool can_reboot = true;
     Result rc = splInitialize();
     if (R_FAILED(rc)) {
         can_reboot = false;
     } else {
-        FILE *f = fopen("romfs:/TegraExplorer.bin", "rb");
-        if (f == NULL) {
-            can_reboot = false;
-        } else {
-            fread(g_reboot_payload, 1, sizeof(g_reboot_payload), f);
-            fclose(f);
-        }
+        can_reboot = true;
     }
     return can_reboot;
 }

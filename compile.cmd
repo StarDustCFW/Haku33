@@ -1,6 +1,6 @@
 @echo off
 
-set /p IP=<C:/My-Switch-ip.txt
+set /p IP=<%temp%/My-Switch-ip.txt
 
 dir /b *.nro>%temp%\filete.txt
 set /p File=<%temp%\filete.txt
@@ -15,5 +15,6 @@ if %a% equ 0 color 0a
 
 echo -----------------------------------
 "C:\devkitPro\tools\bin\nxlink.exe" %File%
+"C:\devkitPro\tools\bin\nxlink.exe" %File% -a %IP%
 %systemroot%\system32\timeout.exe 55
 

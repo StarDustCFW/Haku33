@@ -143,7 +143,7 @@ void SetupClean (){
 		copy_me("romfs:/boot.dat", "/boot.dat");
 		copy_me("romfs:/boot.ini", "/boot.ini");
         
-		//force boot HWFLY
+		//force boot HWFLY PicoFly
         copy_me("sdmc:/payload.bin","sdmc:/payload.bin.bak");
         copy_me("romfs:/TegraExplorer.bin", "/payload.bin");
 
@@ -152,7 +152,7 @@ void SetupClean (){
 		copy_me("romfs:/hekate_keys.ini", "/bootloader/hekate_keys.ini");
 
 		//copy Script
-        copy_me("romfs:/startup_mariko.te", "/startup.te");
+        copy_me("romfs:/startup.te", "/startup.te");
         
 		led_on(1);
 		spsmInitialize();
@@ -163,7 +163,7 @@ void SetupClean (){
         copy_me("romfs:/startup.te", "/startup.te");
 		led_on(1);
 		bpcInitialize();
-		if(init_slp()){reboot_to_payload();}
+		if(init_slp()){reboot_to_payload("romfs:/TegraExplorer.bin");}
 		bpcExit();
 	}
 }
