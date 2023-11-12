@@ -33,6 +33,8 @@
 static u8 g_reboot_payload[IRAM_PAYLOAD_MAX_SIZE];
 char Logs[2024];
 bool isXSOS;
+int verM = 0;
+
 
 extern "C" {
 #include "reboot.h"
@@ -93,6 +95,7 @@ using namespace std;
 Result Init_Services(void)
 {
 	Result ret = 0;
+	if (R_FAILED(ret = setsysInitialize())) {return 1;}
 	if (R_FAILED(ret = splInitialize())) {return 1;}
 	if (R_FAILED(ret = hiddbgInitialize())) {return 1;}
 	if (R_FAILED(ret = psmInitialize())) {return 1;}
@@ -156,7 +159,7 @@ void SetupClean (){
         
 		led_on(1);
 		spsmInitialize();
-		spsmShutdown(true);
+		spsmShutdown(false);
 	}else{
         //Erista boot
 		led_on(2);
@@ -167,6 +170,29 @@ void SetupClean (){
 		bpcExit();
 	}
 }
+void NewClean(){
+    //if ()
+    u64 uidsave = 0x8000000000000000;
+    AccountUid uid;
+    FsFileSystem dataW;
+
+    if(R_SUCCEEDED(fsOpen_SystemSaveData (&dataW,FsSaveDataSpaceId_System,uidsave,uid))) {
+        fsdevMountDevice("bro", dataW);
+        copy_me("romfs:/imkvdb.arc", "bro:/imkvdb.arc");
+        fsdevCommitDevice("bro");
+        fsdevUnmountDevice("bro");
+        cout << "Data Cleared... " << uidsave <<std::endl;
+    }else{
+        cout << "Data not Cleared... " <<std::endl;
+        SetupClean();
+    }
+	fsFsClose(&dataW);
+    led_on(1);
+	spsmInitialize();
+	spsmShutdown(false);
+
+}
+
 
 int main(int argc, char **argv)
 {
@@ -179,7 +205,14 @@ int main(int argc, char **argv)
 	padConfigureInput(8, HidNpadStyleSet_NpadStandard);
     padInitializeDefault(&pad);
     bool keysok = IsExist("/switch/prod.keys");
+    bool sure = false;
     Result rc = 0;
+	SetSysFirmwareVersion ver;
+	if (R_FAILED(rc = setsysGetFirmwareVersion(&ver))) {
+		printf("setsysGetFirmwareVersion() Failied: 0x%x.\n\n", rc);
+	} else {
+		verM = (int)ver.major;
+	}
 
 	//keys
 	while (appletMainLoop())
@@ -227,12 +260,19 @@ int main(int argc, char **argv)
                 printf(LG.text12);
             }
 			printf(LG.text5);
+            if (sure){
+                printf(LG.text13);
+            }
 
 
 		consoleUpdate(NULL);
+        
+		if (kDown & KEY_Y || kDown & KEY_X){
+            SetupClean();
+        }
 
 		//call clean after combo
-		if (kHeld & KEY_A)
+		if (kDown & KEY_A)
 		{
 /*
             if (is_patched){
@@ -240,8 +280,17 @@ int main(int argc, char **argv)
                     SetupClean();
                 }
 			} else SetupClean();
-*/            
-            SetupClean();
+            
+    */
+            if (sure){
+                if (verM >= 17){
+                    NewClean();
+                } else {
+                    SetupClean();
+                }
+            }
+            sure = true;
+            
 			//break;
 		}
 		

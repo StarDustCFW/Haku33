@@ -1,4 +1,5 @@
 #REQUIRE KEYS
+#   NCA Database         EXFAT              INDEX
 is=["8000000000000120","8000000000000047","8000000000000000"]
 p=println
 pr=print
@@ -12,13 +13,6 @@ p("System wiper\n")
 mount=mountsys
 if (emu()){emumenu()}
 if(mount("SYSTEM")){p("Mount failed!")pe()}
-color(0xFF0000)
-p("Are you sure you want to wipe everything?\nThis includes:\n- Saves\n- Game Data\n- All other data on the system\n\nUse this only as a last resort!")
-color(0xFFFF00)
-tw=10000
-wait()
-color(0x0000FF)
-p("Press power to wipe, any other key to exit")a=pause()if(!a.power){exit()}clear()
 color(0xFF0000)
 pr("Deleting system saves... ")
 f=readdir("bis:/save")
@@ -42,6 +36,4 @@ delfile("sd:/Switch/Haku33/Haku33.nro")
 hwfly()
 
 p("\n\nDone!")
-p("\n\nPress Any button to full power off!")
-pause()
 power(3)
