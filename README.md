@@ -35,9 +35,15 @@ So you can go online as long as you keep the console clean of cfw.
 
 
 ### Known Bugs
-* Mariko Not support Tegra explorer video
-
-
+* black screen after 17.0.0
+ ```ini
+We found 3 solution for the problem
+1 just run atmosphere on Sysnand 
+2 delete system:/saves/8000000000000120 using tegra explorer.bin
+And then run atmosphere to rebuild db
+Or 
+3 delete system:/saves completely using tegra explorer.bin an the run atmosphere (this will make a full factory restart)
+```
 <a href="https://discord.io/myrincon"><img src="icon.jpg" alt="Discord Server" /></a>
 
 
