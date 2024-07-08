@@ -127,6 +127,35 @@ void copy_me(string origen, string destino) {
 	dest.close();
 }
 
+bool getindex (string &index){
+    string Dsize = "00118000"; //default size
+    //get 8000000000000120 size
+    /*
+    
+    if(R_SUCCEEDED(fsOpen_SystemSaveData (&dataW,FsSaveDataSpaceId_System,uidsave,uid))) {
+        fsdevMountDevice("bro", dataW);
+        copy_me("romfs:/imkvdb.arc", "bro:/imkvdb.arc");
+        fsdevCommitDevice("bro");
+        fsdevUnmountDevice("bro");
+        cout << "Data Cleared... " << uidsave <<std::endl;
+    }else{
+        cout << "Data not Cleared... " <<std::endl;
+        SetupClean();
+    }
+    
+    */
+    
+    
+    string HEADE = "494D4B560000000001000000";
+    index = HEADE +
+    "494D454E" + "40000000" + "40000000" +
+    "00000000000000000000000000000000000000000000000020010000000000800000000000000000000000000000000000000000000000000000000000000000" +
+    "20010000000000800080"+
+    Dsize + //"00 11 80 00"+  size INT32 - Little Endian (DCBA)
+    std::string(100, '0');
+    
+    return true;
+}
 bool is_patched = false;
 void CheckHardware()
 {
@@ -138,10 +167,9 @@ void CheckHardware()
 }
 
 void SetupClean (){
+    led_on(2);
+    copy_me("romfs:/startup.te", "/startup.te");
 	if (is_patched){
-        
-		led_on(2);
-
 		//force boot sxcore
 		copy_me("romfs:/boot.dat", "/boot.dat");
 		copy_me("romfs:/boot.ini", "/boot.ini");
@@ -150,28 +178,24 @@ void SetupClean (){
         copy_me("sdmc:/payload.bin","sdmc:/payload.bin.bak");
         copy_me("romfs:/TegraExplorer.bin", "/payload.bin");
 
-		//copy keys
-		mkdir("sdmc:/bootloader",0777);
-		copy_me("romfs:/hekate_keys.ini", "/bootloader/hekate_keys.ini");
-
-		//copy Script
-        copy_me("romfs:/startup.te", "/startup.te");
-        
 		led_on(1);
 		spsmInitialize();
 		spsmShutdown(false);
 	}else{
         //Erista boot
-		led_on(2);
-        copy_me("romfs:/startup.te", "/startup.te");
 		led_on(1);
 		bpcInitialize();
 		if(init_slp()){reboot_to_payload("romfs:/TegraExplorer.bin");}
 		bpcExit();
 	}
 }
+
 void NewClean(){
     //if ()
+    string index = "";
+    getindex (string &index)
+
+
     u64 uidsave = 0x8000000000000000;
     AccountUid uid;
     FsFileSystem dataW;
@@ -182,6 +206,11 @@ void NewClean(){
         fsdevCommitDevice("bro");
         fsdevUnmountDevice("bro");
         cout << "Data Cleared... " << uidsave <<std::endl;
+        /*
+        
+        save file index to save 
+        */
+        
     }else{
         cout << "Data not Cleared... " <<std::endl;
         SetupClean();
@@ -256,7 +285,7 @@ int main(int argc, char **argv)
 				printf("\n\n %s",LG.text8);
 			} 
 			printf("\n\x1b[31;1m%s \x1b[0m ",Logs);
-            if (is_patched && !keysok){
+            if (!keysok){
                 printf(LG.text12);
             }
 			printf(LG.text5);
@@ -282,7 +311,7 @@ int main(int argc, char **argv)
 			} else SetupClean();
             
     */
-            if (sure){
+            if (sure && keysok){
                 if (verM >= 17){
                     NewClean();
                 } else {
@@ -295,7 +324,7 @@ int main(int argc, char **argv)
 		}
 		
 		//exit
-		if (kDown & KEY_B || kDown & KEY_Y || kDown & KEY_X)
+		if (kDown & KEY_B)
 		{
 			break;
 		}

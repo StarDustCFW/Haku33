@@ -48,7 +48,7 @@ void reboot_to_payload(const char* payload) {
     FILE *f = fopen(payload, "rb");
     if (f == NULL) {
         can_reboot = false;
-        return 0;
+        return;
     } else {
         can_reboot = true;
         fread(g_reboot_payload, 1, sizeof(g_reboot_payload), f);
