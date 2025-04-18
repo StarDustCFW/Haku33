@@ -38,6 +38,9 @@ So you can go online as long as you keep the console clean of cfw.
 * black screen after 17.0.0
  ```ini
 We found 3 solution for the problem
+
+Never use this solutions on Mariko without the console prod.keys you can brick the console.
+
 1 just run atmosphere on Sysnand 
 2 delete system:/saves/8000000000000120 using tegra explorer.bin
 And then run atmosphere to rebuild db
