@@ -21,7 +21,7 @@
 Mariko consoles cannot reboot to the payload , so to load the payload Haku33 have to Overwrite some files on sd
 * Haku33 Support Mariko in part and not suport clean emummc
 * * I don't have a Mariko console to test, be sure of report any bug
-* * if get a black screen, Press power like 3 times to make the console Wipe an boot
+* * Always make a bakup before clean and only if all is green the make another backup and delete the old one.
 
 ### Note:
 Keep in mind that this program will not UNBAN you, or will it make you immune to BAN.
