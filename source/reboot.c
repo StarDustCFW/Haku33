@@ -43,17 +43,20 @@ static void clear_iram(void) {
 }
 
 void reboot_to_payload(const char* payload) {
-    clear_iram();
-    
     FILE *f = fopen(payload, "rb");
     if (f == NULL) {
         can_reboot = false;
         return;
-    } else {
-        can_reboot = true;
-        fread(g_reboot_payload, 1, sizeof(g_reboot_payload), f);
-        fclose(f);
     }
+    size_t size = fread(g_reboot_payload, 1, sizeof(g_reboot_payload), f);
+    fclose(f);
+    if (size == 0) {
+        can_reboot = false;
+        return;
+    }
+    can_reboot = true;
+
+    clear_iram();
 
     for (size_t i = 0; i < IRAM_PAYLOAD_MAX_SIZE; i += 0x1000) {
         copy_to_iram(IRAM_PAYLOAD_BASE + i, &g_reboot_payload[i], 0x1000);

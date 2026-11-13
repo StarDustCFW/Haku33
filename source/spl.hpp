@@ -21,7 +21,7 @@ SOFTWARE.*/
 #pragma once
 
 namespace spl {
-    char *GetHardwareType(void);
+    const char *GetHardwareType(void);
     bool HasRCMbugPatched(void);
     bool HasEmummc(void);
 }

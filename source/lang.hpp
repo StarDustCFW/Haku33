@@ -9,11 +9,14 @@
 std::map<std::string, const char*> LG;
 
 void set_LANG() {
-    setInitialize();
     u64 lcode = 0;
-    SetLanguage lang;
-    setGetSystemLanguage(&lcode);
-    setMakeLanguage(lcode, &lang);
+    SetLanguage lang = SetLanguage_ENUS; // used when the system language cannot be read
+    if (R_SUCCEEDED(setInitialize())) {
+        if (R_SUCCEEDED(setGetSystemLanguage(&lcode))) {
+            setMakeLanguage(lcode, &lang);
+        }
+        setExit();
+    }
 
     switch(lang) {
         case 5:
@@ -30,7 +33,11 @@ void set_LANG() {
             LG["STATUS1"] = "\x1b[32;1m*\x1b[0m Deshabilitando FTP de SXOS\n";
             LG["INFO1"] = "\x1b[32;1m*\x1b[0m Esto no esta pensado para usarse en EMU\n";
             LG["ERROR1"] = "\x1b[32;1m*\x1b[0m NO Existe /switch/prod.keys, usa LockPick_RCM\n";
-            LG["CONFIRM1"] = "\x1b[33;1m*\x1b[0m ESTAS SEGURO??\n";
+            LG["CONFIRM1"] = "\x1b[33;1m*\x1b[0m ESTAS SEGURO?? Pulsa el mismo boton otra vez para continuar\n";
+            LG["PROMPT2"] = "PULSA X PARA LIMPIAR CON TEGRAEXPLORER (BORRA TODOS LOS DATOS)\n\n";
+            LG["ERROR3"] = "\x1b[31;1m*\x1b[0m No se pudo preparar la SD. No se ha cambiado nada\n";
+            LG["ERROR4"] = "\x1b[31;1m*\x1b[0m No se pudo reiniciar al payload\n";
+            LG["ERROR5"] = "\x1b[31;1m*\x1b[0m No se pudo reconstruir el indice de saves (%s). No se ha cambiado nada\n";
             break;
         default: // English (default)
             LG["WARNING1"] = "\n\x1b[30;1m YOUR CONSOLE WILL BE COMPLETELY CLEANED: SAVES, GAMES, ETC  \x1b[0m\n";
@@ -44,9 +51,12 @@ void set_LANG() {
             LG["ERROR2"] = "\n\x1b[33;1m*\x1b[0m If it freezes for a long time, It has failed. Press POWER 15s \n\nand try again \n\n";
             LG["STATUS1"] = "\x1b[32;1m*\x1b[0m Disabling SXOS FTP\n";
             LG["INFO1"] = "\x1b[32;1m*\x1b[0m This is not intended to be used at EMU\n";
-            LG["ERROR1"] = "\x1b[32;1m*\x1b[0m NO Existe /switch/prod.keys, usa LockPick_RCM\n";
-            LG["CONFIRM1"] = "\x1b[33;1m*\x1b[0m ARE YOU SURE??\n";
+            LG["ERROR1"] = "\x1b[32;1m*\x1b[0m /switch/prod.keys not found, dump it with Lockpick_RCM\n";
+            LG["CONFIRM1"] = "\x1b[33;1m*\x1b[0m ARE YOU SURE?? Press the same button again to continue\n";
+            LG["PROMPT2"] = "PRESS X TO WIPE WITH TEGRAEXPLORER (DELETES ALL DATA)\n\n";
+            LG["ERROR3"] = "\x1b[31;1m*\x1b[0m Could not prepare the SD card. Nothing was changed\n";
+            LG["ERROR4"] = "\x1b[31;1m*\x1b[0m Reboot to payload failed\n";
+            LG["ERROR5"] = "\x1b[31;1m*\x1b[0m Could not rebuild the save index (%s). Nothing was changed\n";
             break;
     }
-    setsysExit();
 }

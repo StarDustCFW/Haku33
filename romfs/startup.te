@@ -2,14 +2,34 @@
 is=["8000000000000120","8000000000000053","8000000000000000"]
 p=println
 pr=print
-hwfly={if(fsexists("sd:/payload.bin.bak")){copyfile("sd:/payload.bin.bak", "sd:/payload.bin")delfile("sd:/payload.bin.bak")}}
 
-pe={hwfly() pause() exit()}
+# Boot files Haku33 replaced on patched consoles (payload.bin, boot.dat, boot.ini)
+# are recorded in sd:/Haku33_backup by source/main.cpp:
+#   <name>       copy of the original file
+#   <name>.none  there was no original, so our copy is removed
+# A backup is only deleted after it was copied back.
+bk="sd:/Haku33_backup/"
+restore={
+	["payload.bin","boot.dat","boot.ini"].foreach("bf"){
+		if(fsexists(bk+bf)){
+			if(copyfile(bk+bf,"sd:/"+bf)){p("Restore failed, original kept as",bk+bf)}.else(){delfile(bk+bf)}
+		}.else(){
+			if(fsexists(bk+bf+".none")){delfile("sd:/"+bf)delfile(bk+bf+".none")}
+		}
+	}
+	# delfile only removes an empty folder, so a backup that was not restored stays
+	delfile("sd:/Haku33_backup")
+}
+
+# error: put the boot files back, keep startup.te so the wipe can be retried
+pe={restore() pause() exit()}
+# the user backed out before anything was deleted: leave nothing armed on the sd
+abort={restore() delfile("sd:/startup.te") exit()}
 p("System wiper\n")
 op=["Exit","Wipe sysmmc"].copy()
 if (emu()){op+"Wipe emummc"}
 r=menu(op,0)clear()
-if(r==0){exit()}
+if(r==0){abort()}
 if(r==1){
 	mount=mountsys
 	selected_target = "sysmmc"
@@ -96,8 +116,7 @@ result = pause(0x70F000F)
 
 if (!result.power)
 {
-	hwfly()
-	exit()
+	abort()
 }
 
 clear()
@@ -219,15 +238,19 @@ color(0x00FF00)p("\n\nDone!")
 color(0x00FF00)
 p("\n\nCleaning!")
 
-movefile("sd:/Nintendo", "sd:/Hamburgesa_Nintendo")
-movefile("sd:/Nintendo", "sd:/Hamburgesa_Nintendo_1")
+# sd:/Nintendo belongs to the sysmmc, an emummc keeps its own Nintendo folder
+if(r==1){
+	movefile("sd:/Nintendo", "sd:/Hamburgesa_Nintendo")
+	movefile("sd:/Nintendo", "sd:/Hamburgesa_Nintendo_1")
+	p("sd:/Nintendo was renamed to sd:/Hamburgesa_Nintendo, it was not deleted")
+}
 
 delfile("sd:/TegraExplorer.bin")
 delfile("sd:/startup.te")
 delfile("sd:/Haku33.nro")
 delfile("sd:/Switch/Haku33.nro")
 delfile("sd:/Switch/Haku33/Haku33.nro")
-hwfly()
+restore()
 
 p("\n\nDone!")
 power(3)
