@@ -238,6 +238,126 @@ static bool write_zero_file() {
 	return ok;
 }
 
+// ---- Free space overwrite, first pass, done here while Horizon is running.
+// TegraExplorer writes to the eMMC at about 2 MB/s, so overwriting the free
+// space of a 32 GB console from startup.te alone takes more than three hours.
+// Horizon writes much faster, so the free space SYSTEM and USER have now is
+// filled with zeros here, into the same Haku33_fill folder startup.te uses.
+// startup.te then deletes the data, overwrites only what that freed and the
+// margin left here, and removes the folder. A margin is left because Horizon
+// is still running. Only for the NAND Horizon is running from, so never when
+// running from emuMMC (the wipe target chosen later would be another NAND).
+struct FillTarget { FsBisPartitionId id; const char *dev; const char *label; };
+static const FillTarget FILL_TARGETS[] = {
+	{ FsBisPartitionId_System, "hsys", "SYSTEM" },
+	{ FsBisPartitionId_User,   "husr", "USER"   },
+};
+static const u64 FILL_MARGIN   = 64ULL << 20;   // left free on each partition
+static const u64 FILL_FILE_MAX = 1024ULL << 20; // per file, FAT32 allows just under 4 GiB
+static const size_t FILL_CHUNK = 0x100000;
+
+static bool mount_bis(const FillTarget &t) {
+	FsFileSystem fs;
+	Result rc = fsOpenBisFileSystem(&fs, t.id, "");
+	if (R_FAILED(rc)) { hlog("%s: fsOpenBisFileSystem 0x%x", t.label, rc); return false; }
+	// fsdev owns fs from here, also when the mount fails.
+	if (fsdevMountDevice(t.dev, fs) == -1) { hlog("%s: mount failed", t.label); return false; }
+	return true;
+}
+
+// Removes every file in <dev>:/Haku33_fill and the folder. Returns the number of files removed.
+static int clear_fill_dir(const FillTarget &t) {
+	char dirpath[64], path[400];
+	snprintf(dirpath, sizeof(dirpath), "%s:/Haku33_fill", t.dev);
+	int n = 0;
+	DIR *d = opendir(dirpath);
+	if (d != NULL) {
+		// collect first: removing while reading a directory is not reliable
+		std::vector<std::string> names;
+		struct dirent *e;
+		while ((e = readdir(d)) != NULL) {
+			if (strcmp(e->d_name, ".") != 0 && strcmp(e->d_name, "..") != 0) names.push_back(e->d_name);
+		}
+		closedir(d);
+		for (const std::string &name : names) {
+			snprintf(path, sizeof(path), "%s/%s", dirpath, name.c_str());
+			if (remove(path) == 0) n++;
+		}
+		rmdir(dirpath);
+	}
+	return n;
+}
+
+// Removes what prefill_free_space() left, for when the wipe does not start.
+static void remove_prefill() {
+	for (const FillTarget &t : FILL_TARGETS) {
+		if (!mount_bis(t)) continue;
+		int n = clear_fill_dir(t);
+		if (n > 0) hlog("%s: removed %d overwrite file(s)", t.label, n);
+		fsdevUnmountDevice(t.dev);
+	}
+}
+
+static bool prefill_one(const FillTarget &t) {
+	static u8 block[FILL_CHUNK]; // zero initialized
+	if (!mount_bis(t)) return false;
+	char dirpath[64], path[96];
+	snprintf(dirpath, sizeof(dirpath), "%s:/Haku33_fill", t.dev);
+	int old = clear_fill_dir(t); // left by an interrupted run
+	if (old > 0) hlog("%s: removed %d leftover overwrite file(s)", t.label, old);
+	mkdir(dirpath, 0777);
+
+	s64 free_bytes = 0;
+	Result rc = fsFsGetFreeSpace(fsdevGetDeviceFileSystem(t.dev), "/", &free_bytes);
+	if (R_FAILED(rc)) {
+		hlog("%s: fsFsGetFreeSpace 0x%x", t.label, rc);
+		rmdir(dirpath);
+		fsdevUnmountDevice(t.dev);
+		return false;
+	}
+	u64 todo = (u64)free_bytes > FILL_MARGIN ? (u64)free_bytes - FILL_MARGIN : 0;
+	const u64 total = todo;
+	bool ok = true;
+	time_t t0 = time(NULL);
+	for (int idx = 0; todo > 0 && ok; idx++) {
+		snprintf(path, sizeof(path), "%s/h%d", dirpath, idx);
+		FILE *f = fopen(path, "wb");
+		if (f == NULL) { ok = false; break; }
+		setvbuf(f, NULL, _IONBF, 0);
+		u64 in_file = todo < FILL_FILE_MAX ? todo : FILL_FILE_MAX;
+		while (in_file > 0 && ok) {
+			size_t n = in_file < FILL_CHUNK ? (size_t)in_file : FILL_CHUNK;
+			if (fwrite(block, 1, n, f) != n) { ok = false; break; }
+			in_file -= n; todo -= n;
+			if (((total - todo) & ((64ULL << 20) - 1)) == 0 || todo == 0) {
+				u64 mb = (total - todo) >> 20, el = (u64)(time(NULL) - t0);
+				printf("\r\x1b[K  %s: %llu / %llu MB", t.label, (unsigned long long)mb, (unsigned long long)(total >> 20));
+				if (el >= 5 && mb / el > 0) printf(", %llu MB/s, %llu min left", (unsigned long long)(mb / el), (unsigned long long)(((todo >> 20) / (mb / el) + 59) / 60));
+				consoleUpdate(NULL);
+			}
+		}
+		if (fclose(f) != 0) ok = false;
+	}
+	printf("\n");
+	u64 secs = (u64)(time(NULL) - t0);
+	u64 done_mb = (total - todo) >> 20;
+	hlog("%s: %llu MB free, wrote %llu MB of zeros in %llu s (%llu MB/s)%s", t.label,
+		(unsigned long long)((u64)free_bytes >> 20), (unsigned long long)done_mb, (unsigned long long)secs,
+		(unsigned long long)(secs ? done_mb / secs : done_mb), ok ? "" : ", stopped early by a write error");
+	fsdevUnmountDevice(t.dev);
+	return ok;
+}
+
+static void prefill_free_space() {
+	if (is_emummc) { hlog("running from emuMMC: no overwrite from Horizon, startup.te does all of it"); return; }
+	printf(LG["STATUS3"]);
+	consoleUpdate(NULL);
+	appletSetAutoSleepDisabled(true); // this can take longer than the auto sleep time
+	for (const FillTarget &t : FILL_TARGETS) {
+		if (!prefill_one(t)) { printf(LG["WARNING5"], t.label); consoleUpdate(NULL); }
+	}
+}
+
 // Starts the TegraExplorer wipe (romfs/startup.te). On success the console
 // reboots or powers off and this does not return. Returns false, with the SD
 // left as it was, when the wipe could not be started.
@@ -259,6 +379,7 @@ bool SetupClean (){
         printf(LG["WARNING4"]);
         consoleUpdate(NULL);
     }
+    bool prefilled = false;
 	if (is_patched){
 		mkdir(BACKUP_DIR, 0777);
 		bool ok = true;
@@ -273,7 +394,8 @@ bool SetupClean (){
 			ok = copy_me("romfs:/TegraExplorer.bin", "sdmc:/payload.bin") && ok;
 		}
 
-		hlog("patched console: boot files %s", ok ? "backed up and replaced, powering off" : "could NOT be prepared, restoring");
+		hlog("patched console: boot files %s", ok ? "backed up and replaced" : "could NOT be prepared, restoring");
+		if (ok && zero_ok) { prefill_free_space(); prefilled = true; }
 		if (!ok) {
 			restore_boot_files();
 			remove_zero_file();
@@ -282,6 +404,7 @@ bool SetupClean (){
 			return false;
 		}
 
+		hlog("powering off, TegraExplorer starts at the next power on");
 		led_on(1);
 		spsmInitialize();
 		spsmShutdown(false);
@@ -289,11 +412,15 @@ bool SetupClean (){
 	}else{
         //Erista boot
 		led_on(1);
-		hlog("rebooting to TegraExplorer");
 		bpcInitialize();
-		if(init_slp()){reboot_to_payload("romfs:/TegraExplorer.bin");}
+		bool slp = init_slp();
+		// Not before the reboot is known to be possible: the files would stay behind.
+		if (slp && zero_ok) { prefill_free_space(); prefilled = true; }
+		hlog("rebooting to TegraExplorer");
+		if(slp){reboot_to_payload("romfs:/TegraExplorer.bin");}
 		bpcExit();
 		hlog("the reboot to TegraExplorer did not happen, wipe cancelled");
+		if (prefilled) remove_prefill();
 		// Only reached when the reboot did not happen: do not leave the wipe
 		// script armed on the SD.
 		remove_zero_file();

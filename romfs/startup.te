@@ -35,39 +35,45 @@ restore={
 	delfile("sd:/Haku33_backup")
 }
 
-# error: put the boot files back, keep startup.te so the wipe can be retried
-pe={restore() pause() exit()}
-
 # Deleting a file only removes its directory entry, the data stays readable in a
 # raw dump, and saves the console creates later are placed on top of it without
 # being cleared. To get rid of it, Haku33 leaves a file of zeros on the sd and
 # fill() copies it to the mounted partition until that is full, then removes
-# the copies again. If this is interrupted the partition stays full: run the
-# wipe again, fill() starts by removing what an earlier run left behind.
+# the copies again.
+# TegraExplorer writes about 2 MB per second, so Haku33 (source/main.cpp) has
+# already filled the space that was free before the reboot, into the same
+# folder, on the SYSTEM and USER of the sysmmc. Those files are still there
+# when fill() runs: it only has to cover what the wipe freed, and removes
+# everything at the end. If this is interrupted the partition stays full: run
+# the wipe again.
 zd="sd:/Haku33_zero"
 zf=zd+"/zero.bin"
 fd="bis:/Haku33_fill"
 notfilled=0
 fill={
-	if(fsexists(fd)){lr=deldir(fd) ls="remove leftover "+fd logr()}
 	if(fsexists(zf)){
 		mkdir(fd)
 		n=0
 		full=0
+		t0=timer()
 		while((full==0)&&(n<2000)){
 			# TegraExplorer 4.2.0 returns an error when the partition is full
 			ns=n.str()
 			ft=fd+"/"+ns
+			if((n>0)&&((n%8)==0)){pr("\n ",n/8,"GB done, still working...")}
 			cr=copyfile(zf,ft)
 			if(cr){full=1}
 			n=n+1
 			ls="copy "+ns lr=cr logr()
 		}
+		lr=(timer()-t0)/1000 ls="seconds spent copying" logr()
 		dr=deldir(fd)
 		ls="remove "+fd lr=dr logr()
 		if(dr){p("\nCould not remove",fd,"- run the wipe again")pe()}
 		if(full){pr(" done,",n,"blocks")}.else(){pr(" NOT FILLED after",n,"blocks")notfilled=1}
 	}.else(){
+		# no zero file: still remove what Haku33 wrote before the reboot
+		if(fsexists(fd)){lr=deldir(fd) ls="remove "+fd logr()}
 		pr(" SKIPPED,",zf,"not found")
 		lm="skipped, zero file not found" log()
 		notfilled=1
@@ -75,8 +81,22 @@ fill={
 }
 dropzero={delfile(zf) delfile(zd)}
 
+# Removes the files Haku33 wrote before the reboot, for when the sysmmc is not
+# going to be wiped after all. Without this its SYSTEM and USER would stay full.
+unfill1={if(fsexists(fd)){lr=deldir(fd) ls="not wiping, remove "+fd+" on "+up logr()}}
+unfill={
+	uw="could not be opened. If it holds a Haku33_fill folder it is full: run Haku33 again"
+	up="SYSTEM" if(mountsys(up)){lm="unfill: mount SYSTEM failed" log() p(up,uw)}.else(){unfill1()}
+	up="USER" if(mountsys(up)){lm="unfill: mount USER failed" log() p(up,uw)}.else(){unfill1()}
+}
+
+# error: put the boot files back, keep startup.te so the wipe can be retried.
+# The files Haku33 wrote are removed so the console is not left with full
+# partitions; a retry started from here then overwrites everything itself.
+pe={unfill() restore() pause() exit()}
+
 # the user backed out before anything was deleted: leave nothing armed on the sd
-abort={restore() dropzero() delfile("sd:/startup.te") exit()}
+abort={unfill() restore() dropzero() delfile("sd:/startup.te") exit()}
 p("System wiper\n")
 op=["Exit","Wipe sysmmc"].copy()
 if (emu()){op+"Wipe emummc"}
@@ -90,6 +110,8 @@ if(r==1){
 if(r==2){
 	mount=mountemu
 	selected_target = "emummc"
+	# the files Haku33 wrote before the reboot are on the sysmmc
+	unfill()
 }
 if(mount("SYSTEM")){lm="mount SYSTEM failed" log()p("Mount failed!")pe()}
 lm="mounted SYSTEM" log()
@@ -293,7 +315,7 @@ if(fsexists("bis:/saveMeta")){
 	if(deldir("bis:/saveMeta")){pr(" failed, left as it was")}.else(){mkdir("bis:/saveMeta")}
 }
 lm="overwriting free space on SYSTEM" log()
-pr("\nOverwriting free space on SYSTEM, do not power off...")
+pr("\nOverwriting free space on SYSTEM, about 1 minute per 128 MB that was deleted, do not power off...")
 fill()
 
 pr("\nDeleting user dirs...")ud=["Album","Contents","save","saveMeta","temp"]
@@ -302,7 +324,7 @@ lm="mounted USER" log()
 ud.foreach("u"){pr("\n"+u,"")if(deldir("bis:/"+u)){lm="delete failed: "+u log()p("Dir deletion failed")pe()}mkdir("bis:/"+u)}
 mkdir("bis:/Contents/placehld")mkdir("bis:/Contents/registered")
 lm="user dirs recreated, overwriting free space on USER" log()
-pr("\nOverwriting free space on USER, this takes several minutes, do not power off...")
+pr("\nOverwriting free space on USER, about 1 minute per 128 MB that was deleted, do not power off...")
 fill()
 color(0x00FF00)p("\n\nDone!")
 
@@ -311,9 +333,20 @@ p("\n\nCleaning!")
 
 # sd:/Nintendo belongs to the sysmmc, an emummc keeps its own Nintendo folder
 if(r==1){
-	movefile("sd:/Nintendo", "sd:/Hamburgesa_Nintendo")
-	movefile("sd:/Nintendo", "sd:/Hamburgesa_Nintendo_1")
-	p("sd:/Nintendo was renamed to sd:/Hamburgesa_Nintendo, it was not deleted")
+	if(fsexists("sd:/Nintendo")){
+		# first free name of Hamburgesa_Nintendo, Hamburgesa_Nintendo_1, _2, ...
+		nb="sd:/Hamburgesa_Nintendo"
+		nt=nb
+		k=0
+		mv=1
+		while((mv!=0)&&(k<100)){
+			if(k>0){nt=nb+"_"+k.str()}
+			if(!fsexists(nt)){mv=movefile("sd:/Nintendo",nt)}
+			k=k+1
+		}
+		lr=mv ls="rename sd:/Nintendo to "+nt logr()
+		if(mv){p("sd:/Nintendo could NOT be renamed, it is still there")}.else(){p("sd:/Nintendo was renamed to",nt,"- it was not deleted")}
+	}
 }
 
 delfile("sd:/TegraExplorer.bin")
