@@ -34,7 +34,8 @@ been run on hardware. What was checked, and how, is listed under
 | 20 | `led_on()`: `hidsysInitialize()` on every call with no exit; in pattern 2 the "off" loop overwrites the second beat (`i=2`), in pattern 3 it never runs (`i=4; i<4`); debug `printf`s reach the user's screen. | `led.cpp:15`, `74`, `106`, `124-137` | **Not changed** (cosmetic, cannot be checked without hardware). |
 | 21 | `reboot.c` copies `0x2F000` bytes to IRAM. Atmosphère's current `reboot_to_payload` uses `0x24000` and `amsBpcSetRebootPayload`. The bundled payload (124954 bytes) fits either way. | `reboot.c:8` | **Not changed.** |
 | 23 | Found during the hardware test: the 17.0.0+ A path leaves `sd:/Nintendo` in place. After the index reset the console no longer recognises that folder, and on the next boot with the SD inserted the system deleted data on the card. `startup.te` avoids this by renaming the folder first. | `main.cpp:193-218` | **Not changed.** The folder may be in use by Horizon while Haku33 runs, so a rename from the app needs its own test. Until then, remove the SD card before the first boot after A, or use X. |
-| 24 | Found by comparing NAND dumps taken before and after the wipe on the test console: the wipe only deletes directory entries. After it, 99.6% of the old USER save data (563 of 566 MB, all 15 game saves) was still intact in free space. On SYSTEM about 1 GB of old save data sat inside the saves the console recreated, because a new save reuses the same clusters and only writes the parts it needs, and another 109 MB was in free space. Three empty pre-wipe folders also remained in SYSTEM `saveMeta`. None of it is visible to the console; it is readable from a raw dump with the console keys. | `startup.te` | Fixed, **not yet run on a console**. Haku33 writes a 128 MB file of zeros to the SD and `startup.te` copies it to SYSTEM and USER until each is full, then removes the copies; SYSTEM `saveMeta` is deleted and recreated. Adds several minutes to the wipe. The names of deleted saves in the SYSTEM save folder are not cleared. |
+| 24 | Found by comparing NAND dumps taken before and after the wipe on the test console: the wipe only deletes directory entries. After it, 99.6% of the old USER save data (563 of 566 MB, all 15 game saves) was still intact in free space. On SYSTEM about 1 GB of old save data sat inside the saves the console recreated, because a new save reuses the same clusters and only writes the parts it needs, and another 109 MB was in free space. Three empty pre-wipe folders also remained in SYSTEM `saveMeta`. None of it is visible to the console; it is readable from a raw dump with the console keys. | `startup.te` | Fixed, **second version not yet run on a console** (the first one crashed there, see finding 25). Haku33 writes a 128 MB file of zeros to the SD and `startup.te` copies it to SYSTEM and USER until each is full, then removes the copies; SYSTEM `saveMeta` is deleted and recreated. Adds several minutes to the wipe. The names of deleted saves in the SYSTEM save folder are not cleared. |
+| 25 | Found when the first version of the free space overwrite was run on the console: it stopped with `[FATAL] Arguments do not match function defenition(s)` in the copy loop and left SYSTEM full. Cause: TegraExplorer 4.2.0 frees a `foreach` variable when its loop ends but keeps the name registered (`arrayForEach` in `source/script/arrayClass.c`). The next `foreach` with the same variable name releases that freed block again, and on the console the block has meanwhile been reused for another variable, which is destroyed. The loop ran `foreach("sz")` on every pass. The original script has the same pattern (`"x"` twice, `"line"` twice); it has not been seen to fail. | `startup.te:46`, `61`, `108`, `215` | Fixed, **not yet run on a console**. The copy loop no longer uses `foreach` or `readdir`, and every `foreach` in the script has its own variable name. The PC harness now stops a run that reuses a `foreach` variable. |
 | 22 | `stuff/Haku33.te` is an unused script in the old TegraExplorer syntax. The README says emuMMC is not supported while `startup.te` offers "Wipe emummc". The workflow pins `actions/checkout@v1` and `actions/upload-artifact@master`. | `stuff/`, `README.md`, `.github/workflows/Homebrew.yml` | **Not changed.** |
 
 ### About finding 1
@@ -58,6 +59,9 @@ console can answer.
   full; running the wipe again removes the leftover files first. If the SD has
   no room for the 128 MB block, the wipe still runs and says at the end that
   free space was not overwritten.
+- Haku33 appends what it did to `sd:/Haku33.log`, and `startup.te` writes
+  `sd:/Haku33_te.log` (menu choice, each step, the result of every copy of the
+  free space overwrite). Both files stay on the SD.
 - Backing out of `startup.te` (first menu, or any key other than power at the
   prompt) now also deletes `sd:/startup.te`. Errors keep it so the wipe can be
   retried.
@@ -107,7 +111,10 @@ Done on a PC:
 
 Not verified:
 
-- The free space overwrite (finding 24) on a console. In the script harness it
+- The second version of the free space overwrite (findings 24 and 25) and the
+  two log files on a console. The first version failed there; after it a
+  recovery run of the script without the overwrite completed and the console
+  booted to first-time setup. In the script harness the new version
   was run with the partition filling mid-block and exactly on a block boundary,
   with a filesystem that reports a full disk as an error and one that leaves a
   short file, with the zero file missing, with leftovers of an interrupted run,

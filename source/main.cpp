@@ -28,8 +28,25 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdbool.h>
+#include <stdarg.h>
 
 int verM = 0;
+
+// Appends a line to sdmc:/Haku33.log, so a run can be looked at afterwards.
+// romfs/startup.te keeps its own log in sdmc:/Haku33_te.log. The file is
+// opened and closed for every line: the console may reboot or power off right
+// after. A log that cannot be written is ignored.
+static void hlog(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
+static void hlog(const char *fmt, ...) {
+	FILE *f = fopen("sdmc:/Haku33.log", "a");
+	if (f == NULL) return;
+	va_list ap;
+	va_start(ap, fmt);
+	vfprintf(f, fmt, ap);
+	va_end(ap);
+	fputc('\n', f);
+	fclose(f);
+}
 
 
 extern "C" {
@@ -226,7 +243,9 @@ static bool write_zero_file() {
 // left as it was, when the wipe could not be started.
 bool SetupClean (){
     led_on(2);
+    hlog("TegraExplorer wipe: preparing the SD");
     if (!copy_me("romfs:/startup.te", "sdmc:/startup.te")) {
+        hlog("could not copy startup.te to the SD, stopped");
         printf(LG["ERROR3"]);
         return false;
     }
@@ -234,7 +253,9 @@ bool SetupClean (){
     // free space was not overwritten.
     printf(LG["STATUS2"]);
     consoleUpdate(NULL);
-    if (!write_zero_file()) {
+    bool zero_ok = write_zero_file();
+    hlog("zero file for the free space overwrite: %s", zero_ok ? "written" : "FAILED, free space will not be overwritten");
+    if (!zero_ok) {
         printf(LG["WARNING4"]);
         consoleUpdate(NULL);
     }
@@ -252,6 +273,7 @@ bool SetupClean (){
 			ok = copy_me("romfs:/TegraExplorer.bin", "sdmc:/payload.bin") && ok;
 		}
 
+		hlog("patched console: boot files %s", ok ? "backed up and replaced, powering off" : "could NOT be prepared, restoring");
 		if (!ok) {
 			restore_boot_files();
 			remove_zero_file();
@@ -267,9 +289,11 @@ bool SetupClean (){
 	}else{
         //Erista boot
 		led_on(1);
+		hlog("rebooting to TegraExplorer");
 		bpcInitialize();
 		if(init_slp()){reboot_to_payload("romfs:/TegraExplorer.bin");}
 		bpcExit();
+		hlog("the reboot to TegraExplorer did not happen, wipe cancelled");
 		// Only reached when the reboot did not happen: do not leave the wipe
 		// script armed on the SD.
 		remove_zero_file();
@@ -295,6 +319,7 @@ NewCleanResult NewClean(){
     FsFileSystem dataW;
 
     Result rc = fsOpen_SystemSaveData (&dataW,FsSaveDataSpaceId_System,uidsave,uid);
+    hlog("index reset (A): fsOpen_SystemSaveData 0x%x", rc);
     if(R_FAILED(rc)) {
         printf("fsOpen_SystemSaveData() 0x%x\n", rc);
         return NewClean_NoAccess;
@@ -302,6 +327,7 @@ NewCleanResult NewClean(){
 
     // fsdev owns dataW from here, also when the mount fails.
     if (fsdevMountDevice("bro", dataW) == -1) {
+        hlog("index reset failed at: mount");
         printf(LG["ERROR5"], "mount");
         return NewClean_Failed;
     }
@@ -317,9 +343,11 @@ NewCleanResult NewClean(){
     fsdevUnmountDevice("bro");
 
     if (failed != NULL) {
+        hlog("index reset failed at: %s (0x%x), nothing was committed", failed, rc);
         printf(LG["ERROR5"], failed);
         return NewClean_Failed;
     }
+    hlog("index reset committed (%u -> %u bytes), powering off", (unsigned)oldIndex.size(), (unsigned)newIndex.size());
 
     led_on(1);
 	spsmInitialize();
@@ -331,6 +359,7 @@ NewCleanResult NewClean(){
 // (TegraExplorer cannot derive keys there).
 void StartTegraWipe(bool keysok){
     if (is_patched && !keysok){
+        hlog("TegraExplorer wipe refused: patched console without /switch/prod.keys");
         printf(LG["ERROR1"]);
         return;
     }
@@ -355,6 +384,9 @@ int main(int argc, char **argv)
 	if (R_SUCCEEDED(rc = setsysGetFirmwareVersion(&ver))) {
 		verM = (int)ver.major;
 	}
+    hlog("---- %s v%s started: firmware %s (0x%x), hardware %s, patched %d, emummc %d, prod.keys %d, services 0x%x",
+        TITLE, VERSION, R_SUCCEEDED(rc) ? ver.display_version : "unknown", rc, spl::GetHardwareType(),
+        (int)is_patched, (int)is_emummc, (int)keysok, init_rc);
     //main menu
     consoleClear();
     printf("\x1b[32;1m*\x1b[0m %s v%s Kronos2308, Hard Reset \n\n",TITLE, VERSION);
@@ -393,13 +425,16 @@ int main(int argc, char **argv)
 		if (pressed != 0 && pressed != armed){
 			//first press only asks, and asks once
 			armed = pressed;
+			hlog("%s pressed once, asking to confirm", pressed == 1 ? "A" : "X/Y");
 			printf(LG["CONFIRM1"]);
 		}
 		else if (pressed == 1){
 			armed = 0;
+			hlog("A confirmed");
 			if (verM >= 17){
 				if (is_emummc){
 					//this would edit the emuMMC index, not sysNAND
+					hlog("A refused: running on emuMMC");
 					printf(LG["INFO1"]);
 				} else if (NewClean() == NewClean_NoAccess){
 					StartTegraWipe(keysok);
@@ -410,6 +445,7 @@ int main(int argc, char **argv)
 		}
 		else if (pressed == 2){
 			armed = 0;
+			hlog("X/Y confirmed");
 			StartTegraWipe(keysok);
 		}
 

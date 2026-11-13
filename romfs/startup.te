@@ -3,6 +3,20 @@ is=["8000000000000120","8000000000000053","8000000000000000"]
 p=println
 pr=print
 
+# Log of this run, kept on the sd so a failure can be diagnosed afterwards.
+# The whole file is rewritten after every step, so it is complete up to the last
+# step that finished. Usage: lm="text" log()
+lf="sd:/Haku33_te.log"
+lg="Haku33 startup.te log\n"
+log={lg=lg+lm+"\n" writefile(lf,lg.bytes())}
+# same, for a step that returned a result code: ls="what" lr=code logr()
+logr={lt=lr.str() lm=ls+" = "+lt log()}
+
+# TegraExplorer 4.2.0 frees a foreach variable when its loop ends but keeps the
+# name registered. The next foreach using the same name then touches freed
+# memory and can destroy an unrelated variable. So: every foreach in this file
+# has its own variable name, and no foreach is run inside a loop or more than once.
+
 # Boot files Haku33 replaced on patched consoles (payload.bin, boot.dat, boot.ini)
 # are recorded in sd:/Haku33_backup by source/main.cpp:
 #   <name>       copy of the original file
@@ -35,25 +49,27 @@ zf=zd+"/zero.bin"
 fd="bis:/Haku33_fill"
 notfilled=0
 fill={
-	if(fsexists(fd)){deldir(fd)}
+	if(fsexists(fd)){lr=deldir(fd) ls="remove leftover "+fd logr()}
 	if(fsexists(zf)){
-		zl=readdir(zd)
-		zs=zl.fileSizes[0]
 		mkdir(fd)
 		n=0
 		full=0
 		while((full==0)&&(n<2000)){
-			# a full partition makes the copy fail, or leaves a short file
+			# TegraExplorer 4.2.0 returns an error when the partition is full
 			ns=n.str()
-			if(copyfile(zf,fd+"/"+ns)){full=1}
+			ft=fd+"/"+ns
+			cr=copyfile(zf,ft)
+			if(cr){full=1}
 			n=n+1
-			fl=readdir(fd)
-			fl.fileSizes.foreach("sz"){if(sz<zs){full=1}}
+			ls="copy "+ns lr=cr logr()
 		}
-		if(deldir(fd)){p("\nCould not remove",fd,"- run the wipe again")pe()}
-		pr(" done,",n,"blocks")
+		dr=deldir(fd)
+		ls="remove "+fd lr=dr logr()
+		if(dr){p("\nCould not remove",fd,"- run the wipe again")pe()}
+		if(full){pr(" done,",n,"blocks")}.else(){pr(" NOT FILLED after",n,"blocks")notfilled=1}
 	}.else(){
 		pr(" SKIPPED,",zf,"not found")
+		lm="skipped, zero file not found" log()
 		notfilled=1
 	}
 }
@@ -65,6 +81,7 @@ p("System wiper\n")
 op=["Exit","Wipe sysmmc"].copy()
 if (emu()){op+"Wipe emummc"}
 r=menu(op,0)clear()
+lr=r ls="menu choice" logr()
 if(r==0){abort()}
 if(r==1){
 	mount=mountsys
@@ -74,7 +91,8 @@ if(r==2){
 	mount=mountemu
 	selected_target = "emummc"
 }
-if(mount("SYSTEM")){p("Mount failed!")pe()}
+if(mount("SYSTEM")){lm="mount SYSTEM failed" log()p("Mount failed!")pe()}
+lm="mounted SYSTEM" log()
 clear()
 
 border = {
@@ -114,11 +132,11 @@ if (!fsexists("bis:/save/"+is[1]))
 		"This script cannot recover lost battery calibration data.",
 		"The system will initialize with default values.",
 		"These values are unsafe for lite systems!"
-	].foreach("line") 
+	].foreach("line2") 
 	{
 		printpos(x_pos, y_pos)
 		y_pos = y_pos + 1
-		print(line)
+		print(line2)
 	}
 }
 
@@ -155,12 +173,14 @@ if (!result.power)
 	abort()
 }
 
+lm="confirmed with power, wiping "+selected_target log()
 clear()
 color(0xFF0000)
 pr("Deleting system saves... ")
 f=readdir("bis:/save")
 if(f.folders.len()!=0){p("Folders in save dir???")pe()}
 f.files.foreach("x"){if(!is.contains(x)){if(delfile("bis:/save/"+x)){p("File deletion failed: ", x)pe()}}}
+lm="system saves deleted" log()
 pr("Done!\nSetting up indexer save...")
 
 if(fsexists("bis:/save/"+is[0]))
@@ -259,9 +279,11 @@ if(fsexists("bis:/save/"+is[0]))
 	if(idxs.write("/lastPublishedId",ba0)){p("lastPublishedId write failed")pe()}
 	if(idxs.commit()){p("Indexer save commit failed")pe()}
 	idxs=0
+	lm="indexer save written" log()
 	pr("Done!")
 }.else()
 {
+	lm="120 save not found, indexer save not edited" log()
 	pr("120 save not found!!! Skip editing indexer save!!!")
 }
 
@@ -270,13 +292,16 @@ if(fsexists("bis:/saveMeta")){
 	pr("\nDeleting SYSTEM saveMeta...")
 	if(deldir("bis:/saveMeta")){pr(" failed, left as it was")}.else(){mkdir("bis:/saveMeta")}
 }
+lm="overwriting free space on SYSTEM" log()
 pr("\nOverwriting free space on SYSTEM, do not power off...")
 fill()
 
 pr("\nDeleting user dirs...")ud=["Album","Contents","save","saveMeta","temp"]
-if(mount("USER")){p("Mount failed!")pe()}
-ud.foreach("x"){pr("\n"+x,"")if(deldir("bis:/"+x)){p("Dir deletion failed")pe()}mkdir("bis:/"+x)}
+if(mount("USER")){lm="mount USER failed" log()p("Mount failed!")pe()}
+lm="mounted USER" log()
+ud.foreach("u"){pr("\n"+u,"")if(deldir("bis:/"+u)){lm="delete failed: "+u log()p("Dir deletion failed")pe()}mkdir("bis:/"+u)}
 mkdir("bis:/Contents/placehld")mkdir("bis:/Contents/registered")
+lm="user dirs recreated, overwriting free space on USER" log()
 pr("\nOverwriting free space on USER, this takes several minutes, do not power off...")
 fill()
 color(0x00FF00)p("\n\nDone!")
@@ -298,6 +323,7 @@ delfile("sd:/Switch/Haku33.nro")
 delfile("sd:/Switch/Haku33/Haku33.nro")
 dropzero()
 restore()
+lr=notfilled ls="finished, overwrite skipped (1 = yes)" logr()
 
 p("\n\nDone!")
 if(notfilled){
