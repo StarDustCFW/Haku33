@@ -23,8 +23,44 @@ restore={
 
 # error: put the boot files back, keep startup.te so the wipe can be retried
 pe={restore() pause() exit()}
+
+# Deleting a file only removes its directory entry, the data stays readable in a
+# raw dump, and saves the console creates later are placed on top of it without
+# being cleared. To get rid of it, Haku33 leaves a file of zeros on the sd and
+# fill() copies it to the mounted partition until that is full, then removes
+# the copies again. If this is interrupted the partition stays full: run the
+# wipe again, fill() starts by removing what an earlier run left behind.
+zd="sd:/Haku33_zero"
+zf=zd+"/zero.bin"
+fd="bis:/Haku33_fill"
+notfilled=0
+fill={
+	if(fsexists(fd)){deldir(fd)}
+	if(fsexists(zf)){
+		zl=readdir(zd)
+		zs=zl.fileSizes[0]
+		mkdir(fd)
+		n=0
+		full=0
+		while((full==0)&&(n<2000)){
+			# a full partition makes the copy fail, or leaves a short file
+			ns=n.str()
+			if(copyfile(zf,fd+"/"+ns)){full=1}
+			n=n+1
+			fl=readdir(fd)
+			fl.fileSizes.foreach("sz"){if(sz<zs){full=1}}
+		}
+		if(deldir(fd)){p("\nCould not remove",fd,"- run the wipe again")pe()}
+		pr(" done,",n,"blocks")
+	}.else(){
+		pr(" SKIPPED,",zf,"not found")
+		notfilled=1
+	}
+}
+dropzero={delfile(zf) delfile(zd)}
+
 # the user backed out before anything was deleted: leave nothing armed on the sd
-abort={restore() delfile("sd:/startup.te") exit()}
+abort={restore() dropzero() delfile("sd:/startup.te") exit()}
 p("System wiper\n")
 op=["Exit","Wipe sysmmc"].copy()
 if (emu()){op+"Wipe emummc"}
@@ -229,10 +265,20 @@ if(fsexists("bis:/save/"+is[0]))
 	pr("120 save not found!!! Skip editing indexer save!!!")
 }
 
+# SYSTEM keeps a saveMeta folder of its own
+if(fsexists("bis:/saveMeta")){
+	pr("\nDeleting SYSTEM saveMeta...")
+	if(deldir("bis:/saveMeta")){pr(" failed, left as it was")}.else(){mkdir("bis:/saveMeta")}
+}
+pr("\nOverwriting free space on SYSTEM, do not power off...")
+fill()
+
 pr("\nDeleting user dirs...")ud=["Album","Contents","save","saveMeta","temp"]
 if(mount("USER")){p("Mount failed!")pe()}
 ud.foreach("x"){pr("\n"+x,"")if(deldir("bis:/"+x)){p("Dir deletion failed")pe()}mkdir("bis:/"+x)}
 mkdir("bis:/Contents/placehld")mkdir("bis:/Contents/registered")
+pr("\nOverwriting free space on USER, this takes several minutes, do not power off...")
+fill()
 color(0x00FF00)p("\n\nDone!")
 
 color(0x00FF00)
@@ -250,7 +296,14 @@ delfile("sd:/startup.te")
 delfile("sd:/Haku33.nro")
 delfile("sd:/Switch/Haku33.nro")
 delfile("sd:/Switch/Haku33/Haku33.nro")
+dropzero()
 restore()
 
 p("\n\nDone!")
+if(notfilled){
+	color(0xFF0000)
+	p("Free space was NOT overwritten: deleted data can still be read from a raw dump.")
+	p("Press any key to power off.")
+	pause()
+}
 power(3)

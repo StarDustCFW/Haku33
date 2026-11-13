@@ -198,6 +198,29 @@ static void restore_boot_files() {
 	rmdir(BACKUP_DIR);
 }
 
+// File of zeros that romfs/startup.te copies over the free space of SYSTEM and
+// USER after deleting, so the deleted data cannot be read back from a raw dump.
+static const char *const ZERO_DIR = "sdmc:/Haku33_zero";
+static const char *const ZERO_FILE = "sdmc:/Haku33_zero/zero.bin";
+static const size_t ZERO_FILE_MIB = 128;
+
+static void remove_zero_file() {
+	remove(ZERO_FILE);
+	rmdir(ZERO_DIR);
+}
+
+static bool write_zero_file() {
+	static u8 block[0x100000]; // zero initialized
+	mkdir(ZERO_DIR, 0777);
+	FILE *f = fopen(ZERO_FILE, "wb");
+	if (f == NULL) return false;
+	bool ok = true;
+	for (size_t i = 0; i < ZERO_FILE_MIB && ok; i++) ok = fwrite(block, 1, sizeof(block), f) == sizeof(block);
+	if (fclose(f) != 0) ok = false;
+	if (!ok) remove_zero_file();
+	return ok;
+}
+
 // Starts the TegraExplorer wipe (romfs/startup.te). On success the console
 // reboots or powers off and this does not return. Returns false, with the SD
 // left as it was, when the wipe could not be started.
@@ -206,6 +229,14 @@ bool SetupClean (){
     if (!copy_me("romfs:/startup.te", "sdmc:/startup.te")) {
         printf(LG["ERROR3"]);
         return false;
+    }
+    // Without this file the wipe still runs, startup.te then reports that the
+    // free space was not overwritten.
+    printf(LG["STATUS2"]);
+    consoleUpdate(NULL);
+    if (!write_zero_file()) {
+        printf(LG["WARNING4"]);
+        consoleUpdate(NULL);
     }
 	if (is_patched){
 		mkdir(BACKUP_DIR, 0777);
@@ -223,6 +254,7 @@ bool SetupClean (){
 
 		if (!ok) {
 			restore_boot_files();
+			remove_zero_file();
 			remove("sdmc:/startup.te");
 			printf(LG["ERROR3"]);
 			return false;
@@ -240,6 +272,7 @@ bool SetupClean (){
 		bpcExit();
 		// Only reached when the reboot did not happen: do not leave the wipe
 		// script armed on the SD.
+		remove_zero_file();
 		remove("sdmc:/startup.te");
 		printf(LG["ERROR4"]);
 		return false;

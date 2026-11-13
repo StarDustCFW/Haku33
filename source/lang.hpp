@@ -38,6 +38,8 @@ void set_LANG() {
             LG["ERROR3"] = "\x1b[31;1m*\x1b[0m No se pudo preparar la SD. No se ha cambiado nada\n";
             LG["ERROR4"] = "\x1b[31;1m*\x1b[0m No se pudo reiniciar al payload\n";
             LG["ERROR5"] = "\x1b[31;1m*\x1b[0m No se pudo reconstruir el indice de saves (%s). No se ha cambiado nada\n";
+            LG["STATUS2"] = "\x1b[32;1m*\x1b[0m Escribiendo en la SD el bloque para sobrescribir el espacio libre...\n";
+            LG["WARNING4"] = "\x1b[33;1m*\x1b[0m No se pudo escribir el bloque (SD llena?). Los datos borrados NO se sobrescribiran\n";
             break;
         default: // English (default)
             LG["WARNING1"] = "\n\x1b[30;1m YOUR CONSOLE WILL BE COMPLETELY CLEANED: SAVES, GAMES, ETC  \x1b[0m\n";
@@ -57,6 +59,8 @@ void set_LANG() {
             LG["ERROR3"] = "\x1b[31;1m*\x1b[0m Could not prepare the SD card. Nothing was changed\n";
             LG["ERROR4"] = "\x1b[31;1m*\x1b[0m Reboot to payload failed\n";
             LG["ERROR5"] = "\x1b[31;1m*\x1b[0m Could not rebuild the save index (%s). Nothing was changed\n";
+            LG["STATUS2"] = "\x1b[32;1m*\x1b[0m Writing the block used to overwrite free space to the SD card...\n";
+            LG["WARNING4"] = "\x1b[33;1m*\x1b[0m Could not write the block (SD full?). Deleted data will NOT be overwritten\n";
             break;
     }
 }

@@ -34,6 +34,7 @@ been run on hardware. What was checked, and how, is listed under
 | 20 | `led_on()`: `hidsysInitialize()` on every call with no exit; in pattern 2 the "off" loop overwrites the second beat (`i=2`), in pattern 3 it never runs (`i=4; i<4`); debug `printf`s reach the user's screen. | `led.cpp:15`, `74`, `106`, `124-137` | **Not changed** (cosmetic, cannot be checked without hardware). |
 | 21 | `reboot.c` copies `0x2F000` bytes to IRAM. Atmosphère's current `reboot_to_payload` uses `0x24000` and `amsBpcSetRebootPayload`. The bundled payload (124954 bytes) fits either way. | `reboot.c:8` | **Not changed.** |
 | 23 | Found during the hardware test: the 17.0.0+ A path leaves `sd:/Nintendo` in place. After the index reset the console no longer recognises that folder, and on the next boot with the SD inserted the system deleted data on the card. `startup.te` avoids this by renaming the folder first. | `main.cpp:193-218` | **Not changed.** The folder may be in use by Horizon while Haku33 runs, so a rename from the app needs its own test. Until then, remove the SD card before the first boot after A, or use X. |
+| 24 | Found by comparing NAND dumps taken before and after the wipe on the test console: the wipe only deletes directory entries. After it, 99.6% of the old USER save data (563 of 566 MB, all 15 game saves) was still intact in free space. On SYSTEM about 1 GB of old save data sat inside the saves the console recreated, because a new save reuses the same clusters and only writes the parts it needs, and another 109 MB was in free space. Three empty pre-wipe folders also remained in SYSTEM `saveMeta`. None of it is visible to the console; it is readable from a raw dump with the console keys. | `startup.te` | Fixed, **not yet run on a console**. Haku33 writes a 128 MB file of zeros to the SD and `startup.te` copies it to SYSTEM and USER until each is full, then removes the copies; SYSTEM `saveMeta` is deleted and recreated. Adds several minutes to the wipe. The names of deleted saves in the SYSTEM save folder are not cleared. |
 | 22 | `stuff/Haku33.te` is an unused script in the old TegraExplorer syntax. The README says emuMMC is not supported while `startup.te` offers "Wipe emummc". The workflow pins `actions/checkout@v1` and `actions/upload-artifact@master`. | `stuff/`, `README.md`, `.github/workflows/Homebrew.yml` | **Not changed.** |
 
 ### About finding 1
@@ -52,6 +53,11 @@ console can answer.
 - On patched consoles the SD gets a `Haku33_backup` folder while the wipe is
   pending. `startup.te` restores from it and removes it. A backup that could
   not be copied back is left in place and reported.
+- The TegraExplorer wipe now overwrites the free space of SYSTEM and USER, which
+  takes several minutes on USER. If it is interrupted the partition is left
+  full; running the wipe again removes the leftover files first. If the SD has
+  no room for the 128 MB block, the wipe still runs and says at the end that
+  free space was not overwritten.
 - Backing out of `startup.te` (first menu, or any key other than power at the
   prompt) now also deletes `sd:/startup.te`. Errors keep it so the wipe can be
   retried.
@@ -90,8 +96,9 @@ Done on a PC:
   console (2 records, 292 bytes). 500,000 randomly damaged inputs produce no
   crash or sanitizer report.
 - **`startup.te`**: run through TegraExplorer's own script interpreter
-  (`source/script`, host build) with the hardware functions replaced by an
-  in-memory SD/eMMC. Seven paths were run: Exit, declined prompt, full sysmmc
+  (`source/script`, host build, with `intToStr` made to behave as on the
+  console) with the hardware functions replaced by an in-memory SD/eMMC that
+  tracks file sizes and free space. Seven paths were run: Exit, declined prompt, full sysmmc
   wipe, full emummc wipe, a failed restore copy, an unpatched console with its
   own `payload.bin`, and a mount failure. The same harness reproduces finding
   7 with the original script.
@@ -100,6 +107,12 @@ Done on a PC:
 
 Not verified:
 
+- The free space overwrite (finding 24) on a console. In the script harness it
+  was run with the partition filling mid-block and exactly on a block boundary,
+  with a filesystem that reports a full disk as an error and one that leaves a
+  short file, with the zero file missing, with leftovers of an interrupted run,
+  and with the copies failing to delete. How long it takes on real eMMC, and
+  TegraExplorer's behaviour when a partition really fills up, need hardware.
 - Anything on a patched or Mariko console: the SD boot file backup and restore
   (findings 4 and 6) has only been run on a PC.
 - The emuMMC refusal, the "Wipe emummc" target, and the error paths.
