@@ -51,6 +51,11 @@ zf=zd+"/zero.bin"
 fd="bis:/Haku33_fill"
 notfilled=0
 fill={
+	# Haku33 puts a file named "ok" in the folder when it has written all of
+	# its files to the end. A folder without it is from a run that was cut
+	# short: its files may hold old data, so it is removed and everything is
+	# overwritten from here.
+	if(fsexists(fd)){if(!fsexists(fd+"/ok")){lr=deldir(fd) ls="incomplete, remove "+fd logr()}}
 	if(fsexists(zf)){
 		mkdir(fd)
 		n=0

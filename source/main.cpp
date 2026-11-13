@@ -254,7 +254,7 @@ static const FillTarget FILL_TARGETS[] = {
 };
 static const u64 FILL_MARGIN   = 64ULL << 20;   // left free on each partition
 static const u64 FILL_FILE_MAX = 1024ULL << 20; // per file, FAT32 allows just under 4 GiB
-static const size_t FILL_CHUNK = 0x100000;
+static const size_t FILL_CHUNK = 4u << 20;      // per write
 
 static bool mount_bis(const FillTarget &t) {
 	FsFileSystem fs;
@@ -298,8 +298,39 @@ static void remove_prefill() {
 	}
 }
 
+// Writes one file of zeros through the filesystem service directly. The file
+// is created at its full size first, so the driver reserves the space once
+// instead of growing the file on every write.
+static bool fill_file(FsFileSystem *fs, const char *path, u64 size, const FillTarget &t, u64 total, u64 &todo, time_t t0) {
+	alignas(0x1000) static u8 block[FILL_CHUNK]; // zero initialized
+	Result rc = fsFsCreateFile(fs, path, (s64)size, 0);
+	if (R_FAILED(rc)) { hlog("%s: create %s (%llu MB) 0x%x", t.label, path, (unsigned long long)(size >> 20), rc); return false; }
+	FsFile f;
+	rc = fsFsOpenFile(fs, path, FsOpenMode_Write, &f);
+	if (R_FAILED(rc)) { hlog("%s: open %s 0x%x", t.label, path, rc); fsFsDeleteFile(fs, path); return false; }
+	u64 off = 0;
+	while (off < size) {
+		u64 n = size - off < FILL_CHUNK ? size - off : FILL_CHUNK;
+		rc = fsFileWrite(&f, (s64)off, block, n, FsWriteOption_None);
+		if (R_FAILED(rc)) { hlog("%s: write %s at %llu MB 0x%x", t.label, path, (unsigned long long)(off >> 20), rc); break; }
+		off += n; todo -= n;
+		if (((total - todo) & ((64ULL << 20) - 1)) == 0 || todo == 0) {
+			u64 mb = (total - todo) >> 20, el = (u64)(time(NULL) - t0);
+			printf("\r\x1b[K  %s: %llu / %llu MB", t.label, (unsigned long long)mb, (unsigned long long)(total >> 20));
+			if (el >= 5 && mb / el > 0) printf(", %llu MB/s, %llu min left", (unsigned long long)(mb / el), (unsigned long long)(((todo >> 20) / (mb / el) + 59) / 60));
+			consoleUpdate(NULL);
+		}
+	}
+	Result frc = fsFileFlush(&f);
+	fsFileClose(&f);
+	if (R_SUCCEEDED(rc) && R_FAILED(frc)) { hlog("%s: flush %s 0x%x", t.label, path, frc); rc = frc; }
+	// A file that was not written to its end still holds old data in the part
+	// that was only reserved: remove it, so startup.te overwrites that space.
+	if (R_FAILED(rc)) fsFsDeleteFile(fs, path);
+	return R_SUCCEEDED(rc);
+}
+
 static bool prefill_one(const FillTarget &t) {
-	static u8 block[FILL_CHUNK]; // zero initialized
 	if (!mount_bis(t)) return false;
 	char dirpath[64], path[96];
 	snprintf(dirpath, sizeof(dirpath), "%s:/Haku33_fill", t.dev);
@@ -307,8 +338,9 @@ static bool prefill_one(const FillTarget &t) {
 	if (old > 0) hlog("%s: removed %d leftover overwrite file(s)", t.label, old);
 	mkdir(dirpath, 0777);
 
+	FsFileSystem *fs = fsdevGetDeviceFileSystem(t.dev);
 	s64 free_bytes = 0;
-	Result rc = fsFsGetFreeSpace(fsdevGetDeviceFileSystem(t.dev), "/", &free_bytes);
+	Result rc = fsFsGetFreeSpace(fs, "/", &free_bytes);
 	if (R_FAILED(rc)) {
 		hlog("%s: fsFsGetFreeSpace 0x%x", t.label, rc);
 		rmdir(dirpath);
@@ -320,30 +352,22 @@ static bool prefill_one(const FillTarget &t) {
 	bool ok = true;
 	time_t t0 = time(NULL);
 	for (int idx = 0; todo > 0 && ok; idx++) {
-		snprintf(path, sizeof(path), "%s/h%d", dirpath, idx);
-		FILE *f = fopen(path, "wb");
-		if (f == NULL) { ok = false; break; }
-		setvbuf(f, NULL, _IONBF, 0);
-		u64 in_file = todo < FILL_FILE_MAX ? todo : FILL_FILE_MAX;
-		while (in_file > 0 && ok) {
-			size_t n = in_file < FILL_CHUNK ? (size_t)in_file : FILL_CHUNK;
-			if (fwrite(block, 1, n, f) != n) { ok = false; break; }
-			in_file -= n; todo -= n;
-			if (((total - todo) & ((64ULL << 20) - 1)) == 0 || todo == 0) {
-				u64 mb = (total - todo) >> 20, el = (u64)(time(NULL) - t0);
-				printf("\r\x1b[K  %s: %llu / %llu MB", t.label, (unsigned long long)mb, (unsigned long long)(total >> 20));
-				if (el >= 5 && mb / el > 0) printf(", %llu MB/s, %llu min left", (unsigned long long)(mb / el), (unsigned long long)(((todo >> 20) / (mb / el) + 59) / 60));
-				consoleUpdate(NULL);
-			}
-		}
-		if (fclose(f) != 0) ok = false;
+		snprintf(path, sizeof(path), "/Haku33_fill/h%d", idx);
+		ok = fill_file(fs, path, todo < FILL_FILE_MAX ? todo : FILL_FILE_MAX, t, total, todo, t0);
 	}
 	printf("\n");
+	// startup.te only trusts the folder when this marker is in it. Without it
+	// (power lost part way, a failed write) it removes the folder and
+	// overwrites all of the free space itself.
+	if (ok) {
+		rc = fsFsCreateFile(fs, "/Haku33_fill/ok", 0, 0);
+		if (R_FAILED(rc)) { hlog("%s: marker 0x%x", t.label, rc); ok = false; }
+	}
 	u64 secs = (u64)(time(NULL) - t0);
 	u64 done_mb = (total - todo) >> 20;
 	hlog("%s: %llu MB free, wrote %llu MB of zeros in %llu s (%llu MB/s)%s", t.label,
 		(unsigned long long)((u64)free_bytes >> 20), (unsigned long long)done_mb, (unsigned long long)secs,
-		(unsigned long long)(secs ? done_mb / secs : done_mb), ok ? "" : ", stopped early by a write error");
+		(unsigned long long)(secs ? done_mb / secs : done_mb), ok ? "" : ", stopped early by an error");
 	fsdevUnmountDevice(t.dev);
 	return ok;
 }
