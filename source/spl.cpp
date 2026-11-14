@@ -29,11 +29,11 @@ namespace spl
     static constexpr u32 ExosphereHasRcmBugPatch = 65004;
     static constexpr u32 ExosphereEmummcType = 65007;
     
-    char *GetHardwareType(void)
+    const char *GetHardwareType(void)
     {
         Result ret = 0;
         u64 hardware_type = 4;
-        char *hardware[] = {
+        static const char *const hardware[] = {
             "Icosa",  // Erista normal
             "Copper", // Erista prototype
             "Hoag",   // Mariko lite
@@ -42,7 +42,7 @@ namespace spl
             "Aula",   // nx-abcd board
             "Unknown"};
 
-        if (R_FAILED(ret = splGetConfig(SplConfigItem_HardwareType, &hardware_type)))
+        if (R_FAILED(ret = splGetConfig(SplConfigItem_HardwareType, &hardware_type)) || hardware_type > 5)
         {
             return hardware[6];
         }
@@ -53,21 +53,21 @@ namespace spl
     bool HasRCMbugPatched(void)
     {
         Result ret = 0;
-        u64 has_rcm_bug_patch;
+        u64 has_rcm_bug_patch = 0;
         if (R_SUCCEEDED(ret = splGetConfig(static_cast<SplConfigItem>(ExosphereHasRcmBugPatch), &has_rcm_bug_patch)))
         {
             return has_rcm_bug_patch;
         }
         else
         {
-            return has_rcm_bug_patch;
+            return false;
         }
     }
 
     bool HasEmummc(void)
     {
         Result ret = 0;
-        u64 IsEmummc;
+        u64 IsEmummc = 0;
 
         if (R_SUCCEEDED(ret = splGetConfig(static_cast<SplConfigItem>(ExosphereEmummcType), &IsEmummc)))
         {
@@ -75,7 +75,7 @@ namespace spl
         }
         else
         {
-            return IsEmummc;
+            return false;
         }
     }
 

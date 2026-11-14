@@ -2,14 +2,167 @@
 is=["8000000000000120","8000000000000053","8000000000000000"]
 p=println
 pr=print
-hwfly={if(fsexists("sd:/payload.bin.bak")){copyfile("sd:/payload.bin.bak", "sd:/payload.bin")delfile("sd:/payload.bin.bak")}}
 
-pe={hwfly() pause() exit()}
+# Log of this run, kept on the sd so a failure can be diagnosed afterwards.
+# The whole file is rewritten after every step, so it is complete up to the last
+# step that finished. Usage: lm="text" log()
+lf="sd:/Haku33_te.log"
+lg="Haku33 startup.te log\n"
+log={lg=lg+lm+"\n" writefile(lf,lg.bytes())}
+# same, for a step that returned a result code: ls="what" lr=code logr()
+logr={lt=lr.str() lm=ls+" = "+lt log()}
+
+# TegraExplorer 4.2.0 frees a foreach variable when its loop ends but keeps the
+# name registered. The next foreach using the same name then touches freed
+# memory and can destroy an unrelated variable. So: every foreach in this file
+# has its own variable name, and no foreach is run inside a loop or more than once.
+
+# Boot files Haku33 replaced on patched consoles (payload.bin, boot.dat, boot.ini)
+# are recorded in sd:/Haku33_backup by source/main.cpp:
+#   <name>       copy of the original file
+#   <name>.none  there was no original, so our copy is removed
+# A backup is only deleted after it was copied back.
+bk="sd:/Haku33_backup/"
+restore={
+	["payload.bin","boot.dat","boot.ini"].foreach("bf"){
+		if(fsexists(bk+bf)){
+			if(copyfile(bk+bf,"sd:/"+bf)){p("Restore failed, original kept as",bk+bf)}.else(){delfile(bk+bf)}
+		}.else(){
+			if(fsexists(bk+bf+".none")){delfile("sd:/"+bf)delfile(bk+bf+".none")}
+		}
+	}
+	# delfile only removes an empty folder, so a backup that was not restored stays
+	delfile("sd:/Haku33_backup")
+}
+
+# Deleting a file only removes its directory entry, the data stays readable in a
+# raw dump, and saves the console creates later are placed on top of it without
+# being cleared. To get rid of it, Haku33 leaves a file of zeros on the sd and
+# fill() copies it to the mounted partition until that is full, then removes
+# the copies again.
+# TegraExplorer writes about 2 MB per second, so Haku33 (source/main.cpp) has
+# already filled the space that was free before the reboot, into the same
+# folder, on the SYSTEM and USER of the sysmmc. Those files are still there
+# when fill() runs: it only has to cover what the wipe freed, and removes
+# everything at the end. If this is interrupted the partition stays full: run
+# the wipe again.
+zd="sd:/Haku33_zero"
+zf=zd+"/zero.bin"
+fd="bis:/Haku33_fill"
+notfilled=0
+fill={
+	# Haku33 puts a file named "ok" in the folder when it has written all of
+	# its files to the end. A folder without it is from a run that was cut
+	# short: its files may hold old data, so it is removed and everything is
+	# overwritten from here.
+	if(fsexists(fd)){if(!fsexists(fd+"/ok")){lr=deldir(fd) ls="incomplete, remove "+fd logr()}}
+	if(fsexists(zf)){
+		mkdir(fd)
+		n=0
+		full=0
+		t0=timer()
+		while((full==0)&&(n<2000)){
+			# TegraExplorer 4.2.0 returns an error when the partition is full
+			ns=n.str()
+			ft=fd+"/"+ns
+			if((n>0)&&((n%8)==0)){pr("\n ",n/8,"GB done, still working...")}
+			cr=copyfile(zf,ft)
+			if(cr){full=1}
+			n=n+1
+			ls="copy "+ns lr=cr logr()
+		}
+		lr=(timer()-t0)/1000 ls="seconds spent copying" logr()
+		dr=deldir(fd)
+		ls="remove "+fd lr=dr logr()
+		if(dr){p("\nCould not remove",fd,"- run the wipe again")pe()}
+		if(full){pr(" done,",n,"blocks")}.else(){pr(" NOT FILLED after",n,"blocks")notfilled=1}
+	}.else(){
+		# no zero file: still remove what Haku33 wrote before the reboot
+		if(fsexists(fd)){lr=deldir(fd) ls="remove "+fd logr()}
+		pr(" SKIPPED,",zf,"not found")
+		lm="skipped, zero file not found" log()
+		notfilled=1
+	}
+}
+dropzero={delfile(zf) delfile(zd)}
+
+# Removes the files Haku33 wrote before the reboot, for when the sysmmc is not
+# going to be wiped after all. Without this its SYSTEM and USER would stay full.
+unfill1={if(fsexists(fd)){lr=deldir(fd) ls="not wiping, remove "+fd+" on "+up logr()}}
+unfill={
+	uw="could not be opened. If it holds a Haku33_fill folder it is full: run Haku33 again"
+	up="SYSTEM" if(mountsys(up)){lm="unfill: mount SYSTEM failed" log() p(up,uw)}.else(){unfill1()}
+	up="USER" if(mountsys(up)){lm="unfill: mount USER failed" log() p(up,uw)}.else(){unfill1()}
+}
+
+# error: put the boot files back, keep startup.te so the wipe can be retried.
+# The files Haku33 wrote are removed so the console is not left with full
+# partitions; a retry started from here then overwrites everything itself.
+pe={unfill() restore() pause() exit()}
+
+# The save folder of SYSTEM keeps the names of deleted saves in its directory
+# entries. To get rid of them the saves that are kept are moved to a new folder,
+# the old folder is deleted (fill() then overwrites it) and the new one takes
+# its name. If that is interrupted the kept saves are in bis:/Haku33_save and
+# the console cannot use them: saveback() puts them back, it runs at the start
+# of every run, before anything else looks at bis:/save.
+sn="bis:/Haku33_save"
+so="bis:/save"
+namesleft=0
+saveback={
+	if(fsexists(sn)){
+		lm="saves are in "+sn+", putting them back" log()
+		if(!fsexists(so)){
+			lr=movefile(sn,so) ls="rename "+sn+" to "+so logr()
+		}.else(){
+			sb=0
+			while(sb<3){
+				if(fsexists(sn+"/"+is[sb])){
+					# a move is a rename, so a save cannot be in both folders; if it is, leave both alone
+					if(fsexists(so+"/"+is[sb])){lm="in both folders, left alone: "+is[sb] log()}.else(){lr=movefile(sn+"/"+is[sb],so+"/"+is[sb]) ls="move back "+is[sb] logr()}
+				}
+				sb=sb+1
+			}
+			lr=delfile(sn) ls="remove "+sn logr()
+		}
+	}
+}
+newsavedir={
+	saveback()
+	nf=0
+	if(mkdir(sn)){nf=1}
+	si=0
+	while((si<3)&&(nf==0)){
+		if(fsexists(so+"/"+is[si])){if(movefile(so+"/"+is[si],sn+"/"+is[si])){nf=1}}
+		si=si+1
+	}
+	if(nf==0){
+		# nothing may be left in the old folder
+		sl=readdir(so)
+		if((sl.files.len()!=0)||(sl.folders.len()!=0)){nf=1}
+	}
+	if(nf==0){
+		if(deldir(so)){nf=1}.else(){
+			lr=movefile(sn,so) ls="save folder rebuilt, rename to "+so logr()
+			if(lr){p("\nCould not rename",sn,"to",so,"- run the wipe again")pe()}
+		}
+	}
+	if(nf){
+		saveback()
+		namesleft=1
+		lm="save folder NOT rebuilt, names of deleted saves stay" log()
+		pr(" failed, the names of deleted saves stay")
+	}
+}
+
+# the user backed out before anything was deleted: leave nothing armed on the sd
+abort={unfill() restore() dropzero() delfile("sd:/startup.te") exit()}
 p("System wiper\n")
 op=["Exit","Wipe sysmmc"].copy()
 if (emu()){op+"Wipe emummc"}
 r=menu(op,0)clear()
-if(r==0){exit()}
+lr=r ls="menu choice" logr()
+if(r==0){abort()}
 if(r==1){
 	mount=mountsys
 	selected_target = "sysmmc"
@@ -17,8 +170,12 @@ if(r==1){
 if(r==2){
 	mount=mountemu
 	selected_target = "emummc"
+	# the files Haku33 wrote before the reboot are on the sysmmc
+	unfill()
 }
-if(mount("SYSTEM")){p("Mount failed!")pe()}
+if(mount("SYSTEM")){lm="mount SYSTEM failed" log()p("Mount failed!")pe()}
+lm="mounted SYSTEM" log()
+saveback()
 clear()
 
 border = {
@@ -58,11 +215,11 @@ if (!fsexists("bis:/save/"+is[1]))
 		"This script cannot recover lost battery calibration data.",
 		"The system will initialize with default values.",
 		"These values are unsafe for lite systems!"
-	].foreach("line") 
+	].foreach("line2") 
 	{
 		printpos(x_pos, y_pos)
 		y_pos = y_pos + 1
-		print(line)
+		print(line2)
 	}
 }
 
@@ -96,16 +253,17 @@ result = pause(0x70F000F)
 
 if (!result.power)
 {
-	hwfly()
-	exit()
+	abort()
 }
 
+lm="confirmed with power, wiping "+selected_target log()
 clear()
 color(0xFF0000)
 pr("Deleting system saves... ")
 f=readdir("bis:/save")
 if(f.folders.len()!=0){p("Folders in save dir???")pe()}
 f.files.foreach("x"){if(!is.contains(x)){if(delfile("bis:/save/"+x)){p("File deletion failed: ", x)pe()}}}
+lm="system saves deleted" log()
 pr("Done!\nSetting up indexer save...")
 
 if(fsexists("bis:/save/"+is[0]))
@@ -198,36 +356,125 @@ if(fsexists("bis:/save/"+is[0]))
 	idb.addrange(ba0)
 
 	idxs=readsave("bis:/save/"+is[2])
+	# The old index (accounts, games) is overwritten before the file is made
+	# smaller, otherwise it stays readable in the save: behind the new records
+	# in the first block, and in a block next to it that held an older copy.
+	# Limits of TegraExplorer 4.2.0's save code, found on a PC with copies of
+	# real saves: a write of more than 16384 zero bytes damages the save, the
+	# same write with 0xFF does not, a file can be grown by one block but not
+	# by more, and growing and shrinking in the same session damages the save.
+	# So, first session: round the size up to whole blocks plus one (the extra
+	# block is where the older copy was found), fill everything with 0xFF,
+	# zero the first block, write the new index. Second session: shrink.
+	oi=idxs.read("/imkvdb.arc")
+	ol=oi.len()
+	oi=0
+	ib=(ol+16383)/16384
+	lr=ol ls="old index size" logr()
+	nb=ib+1
+	if(idxs.resize("/imkvdb.arc",nb*16384)){
+		lm="index not grown by a block, overwriting what it has" log()
+		idxs=0
+		idxs=readsave("bis:/save/"+is[2])
+		nb=ib
+		if(nb>0){
+			if(idxs.resize("/imkvdb.arc",nb*16384)){p("imkvdb resize to whole blocks failed")pe()}
+		}
+	}
+	if(nb>0){
+		fb=["BYTE[]",0xFF].copy()
+		zb=["BYTE[]",0x00].copy()
+		ik=0
+		while(ik<14){
+			ft=fb.copy() fb.addrange(ft)
+			zt=zb.copy() zb.addrange(zt)
+			ik=ik+1
+		}
+		fa=fb.copy()
+		ik=1
+		while(ik<nb){fa.addrange(fb) ik=ik+1}
+		if(idxs.write("/imkvdb.arc",fa)){p("imkvdb overwrite failed")pe()}
+		if(idxs.write("/imkvdb.arc",zb)){p("imkvdb zero failed")pe()}
+		fa=0
+		if(idxs.write("/imkvdb.arc",idb)){p("imkvdb first write failed")pe()}
+		if(idxs.commit()){p("Indexer save first commit failed")pe()}
+		lr=nb ls="old index overwritten, blocks" logr()
+		idxs=0
+		idxs=readsave("bis:/save/"+is[2])
+	}
 	if(idxs.resize("/imkvdb.arc",idb.len())){p("imkvdb resize failed")pe()}
 	if(idxs.write("/imkvdb.arc",idb)){p("imkvdb write failed")pe()}
 	if(idxs.resize("/lastPublishedId",ba0.len())){p("lastPublishedId resize failed")pe()}
 	if(idxs.write("/lastPublishedId",ba0)){p("lastPublishedId write failed")pe()}
 	if(idxs.commit()){p("Indexer save commit failed")pe()}
 	idxs=0
+	lm="indexer save written" log()
 	pr("Done!")
 }.else()
 {
+	lm="120 save not found, indexer save not edited" log()
 	pr("120 save not found!!! Skip editing indexer save!!!")
 }
 
+pr("\nRebuilding the SYSTEM save folder...")
+newsavedir()
+
+# SYSTEM keeps a saveMeta folder of its own
+if(fsexists("bis:/saveMeta")){
+	pr("\nDeleting SYSTEM saveMeta...")
+	if(deldir("bis:/saveMeta")){pr(" failed, left as it was")}.else(){mkdir("bis:/saveMeta")}
+}
+lm="overwriting free space on SYSTEM" log()
+pr("\nOverwriting free space on SYSTEM, about 1 minute per 128 MB that was deleted, do not power off...")
+fill()
+
 pr("\nDeleting user dirs...")ud=["Album","Contents","save","saveMeta","temp"]
-if(mount("USER")){p("Mount failed!")pe()}
-ud.foreach("x"){pr("\n"+x,"")if(deldir("bis:/"+x)){p("Dir deletion failed")pe()}mkdir("bis:/"+x)}
+if(mount("USER")){lm="mount USER failed" log()p("Mount failed!")pe()}
+lm="mounted USER" log()
+ud.foreach("u"){pr("\n"+u,"")if(deldir("bis:/"+u)){lm="delete failed: "+u log()p("Dir deletion failed")pe()}mkdir("bis:/"+u)}
 mkdir("bis:/Contents/placehld")mkdir("bis:/Contents/registered")
+lm="user dirs recreated, overwriting free space on USER" log()
+pr("\nOverwriting free space on USER, about 1 minute per 128 MB that was deleted, do not power off...")
+fill()
 color(0x00FF00)p("\n\nDone!")
 
 color(0x00FF00)
 p("\n\nCleaning!")
 
-movefile("sd:/Nintendo", "sd:/Hamburgesa_Nintendo")
-movefile("sd:/Nintendo", "sd:/Hamburgesa_Nintendo_1")
+# sd:/Nintendo belongs to the sysmmc, an emummc keeps its own Nintendo folder
+if(r==1){
+	if(fsexists("sd:/Nintendo")){
+		# first free name of Hamburgesa_Nintendo, Hamburgesa_Nintendo_1, _2, ...
+		nb="sd:/Hamburgesa_Nintendo"
+		nt=nb
+		k=0
+		mv=1
+		while((mv!=0)&&(k<100)){
+			if(k>0){nt=nb+"_"+k.str()}
+			if(!fsexists(nt)){mv=movefile("sd:/Nintendo",nt)}
+			k=k+1
+		}
+		lr=mv ls="rename sd:/Nintendo to "+nt logr()
+		if(mv){p("sd:/Nintendo could NOT be renamed, it is still there")}.else(){p("sd:/Nintendo was renamed to",nt,"- it was not deleted")}
+	}
+}
 
 delfile("sd:/TegraExplorer.bin")
 delfile("sd:/startup.te")
 delfile("sd:/Haku33.nro")
 delfile("sd:/Switch/Haku33.nro")
 delfile("sd:/Switch/Haku33/Haku33.nro")
-hwfly()
+dropzero()
+restore()
+lr=notfilled ls="finished, overwrite skipped (1 = yes)" logr()
+lr=namesleft ls="names of deleted saves left in the SYSTEM save folder (1 = yes)" logr()
 
 p("\n\nDone!")
+if(namesleft){p("The names of deleted saves are still in the SYSTEM save folder.")}
+if(notfilled){
+	color(0xFF0000)
+	p("Free space was NOT overwritten: deleted data can still be read from a raw dump.")
+	p("Press any key to power off.")
+	pause()
+}
 power(3)

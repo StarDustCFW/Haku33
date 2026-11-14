@@ -24,16 +24,29 @@
 #include "led.hpp"
 #include "lang.hpp"
 #include "spl.hpp"
+#include "imkvdb.hpp"
 #include <string.h>
 #include <stdio.h>
 #include <stdbool.h>
-#include "spl.hpp"
+#include <stdarg.h>
 
-#define IRAM_PAYLOAD_MAX_SIZE 0x24000
-static u8 g_reboot_payload[IRAM_PAYLOAD_MAX_SIZE];
-char Logs[2024];
-bool isXSOS;
 int verM = 0;
+
+// Appends a line to sdmc:/Haku33.log, so a run can be looked at afterwards.
+// romfs/startup.te keeps its own log in sdmc:/Haku33_te.log. The file is
+// opened and closed for every line: the console may reboot or power off right
+// after. A log that cannot be written is ignored.
+static void hlog(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
+static void hlog(const char *fmt, ...) {
+	FILE *f = fopen("sdmc:/Haku33.log", "a");
+	if (f == NULL) return;
+	va_list ap;
+	va_start(ap, fmt);
+	vfprintf(f, fmt, ap);
+	va_end(ap);
+	fputc('\n', f);
+	fclose(f);
+}
 
 
 extern "C" {
@@ -95,10 +108,10 @@ using namespace std;
 Result Init_Services(void)
 {
 	Result ret = 0;
-	if (R_FAILED(ret = setsysInitialize())) {return 1;}
-	if (R_FAILED(ret = splInitialize())) {return 1;}
-	if (R_FAILED(ret = hiddbgInitialize())) {return 1;}
-	if (R_FAILED(ret = psmInitialize())) {return 1;}
+	if (R_FAILED(ret = setsysInitialize())) {return ret;}
+	if (R_FAILED(ret = splInitialize())) {return ret;}
+	if (R_FAILED(ret = hiddbgInitialize())) {return ret;}
+	if (R_FAILED(ret = psmInitialize())) {return ret;}
 	return ret;
 }
 
@@ -106,7 +119,6 @@ void close_Services()
 {
 	setsysExit();
 	splExit();
-	smExit();
 	hiddbgExit();
 	psmExit();
 }
@@ -119,102 +131,390 @@ bool IsExist(std::string Path)
     return ex;
 }
 
-void copy_me(string origen, string destino) {
+// Copies origen to destino. Returns false, without creating or truncating
+// destino, when origen cannot be opened.
+bool copy_me(const string &origen, const string &destino) {
 	ifstream source(origen, ios::binary);
-	ofstream dest(destino, ios::binary);
-	dest << source.rdbuf();
-	source.close();
+	if (!source.good()) return false;
+	ofstream dest(destino, ios::binary | ios::trunc);
+	if (!dest.good()) return false;
+	// operator<< sets failbit when it inserts nothing, so an empty file is
+	// handled apart.
+	if (source.peek() != ifstream::traits_type::eof()) dest << source.rdbuf();
 	dest.close();
+	return !dest.fail();
 }
 
-bool getindex (string &index){
-    string Dsize = "00118000"; //default size
-    //get 8000000000000120 size
-    /*
-    
-    if(R_SUCCEEDED(fsOpen_SystemSaveData (&dataW,FsSaveDataSpaceId_System,uidsave,uid))) {
-        fsdevMountDevice("bro", dataW);
-        copy_me("romfs:/imkvdb.arc", "bro:/imkvdb.arc");
-        fsdevCommitDevice("bro");
-        fsdevUnmountDevice("bro");
-        cout << "Data Cleared... " << uidsave <<std::endl;
-    }else{
-        cout << "Data not Cleared... " <<std::endl;
-        SetupClean();
-    }
-    
-    */
-    
-    
-    string HEADE = "494D4B560000000001000000";
-    index = HEADE +
-    "494D454E" + "40000000" + "40000000" +
-    "00000000000000000000000000000000000000000000000020010000000000800000000000000000000000000000000000000000000000000000000000000000" +
-    "20010000000000800080"+
-    Dsize + //"00 11 80 00"+  size INT32 - Little Endian (DCBA)
-    std::string(100, '0');
-    
-    return true;
+bool read_file(const char *path, std::vector<u8> &out) {
+	out.clear();
+	FILE *f = fopen(path, "rb");
+	if (f == NULL) return false;
+	u8 buf[0x1000];
+	size_t n;
+	while ((n = fread(buf, 1, sizeof(buf), f)) > 0) out.insert(out.end(), buf, buf + n);
+	bool ok = !ferror(f);
+	fclose(f);
+	return ok;
 }
+
+bool write_file(const char *path, const std::vector<u8> &data) {
+	FILE *f = fopen(path, "wb");
+	if (f == NULL) return false;
+	bool ok = fwrite(data.data(), 1, data.size(), f) == data.size();
+	if (fclose(f) != 0) ok = false;
+	return ok;
+}
+
 bool is_patched = false;
+bool is_emummc = false;
 void CheckHardware()
 {
 	/*Check if is Ipatched/Mariko */
-	if (spl::GetHardwareType() == "Iowa" || spl::GetHardwareType() == "Hoag" || spl::GetHardwareType() == "Calcio" || spl::HasRCMbugPatched())
+	const char *hw = spl::GetHardwareType();
+	if (!strcmp(hw, "Iowa") || !strcmp(hw, "Hoag") || !strcmp(hw, "Calcio") || !strcmp(hw, "Aula") || spl::HasRCMbugPatched())
 	{
 		is_patched = true;
 	}
+	is_emummc = spl::HasEmummc();
 }
 
-void SetupClean (){
-    led_on(2);
-    copy_me("romfs:/startup.te", "/startup.te");
-	if (is_patched){
-		//force boot sxcore
-		copy_me("romfs:/boot.dat", "/boot.dat");
-		copy_me("romfs:/boot.ini", "/boot.ini");
-        
-		//force boot HWFLY PicoFly
-        copy_me("sdmc:/payload.bin","sdmc:/payload.bin.bak");
-        copy_me("romfs:/TegraExplorer.bin", "/payload.bin");
+// Boot files replaced on the SD of patched consoles so the modchip starts
+// TegraExplorer. What was there before is recorded in BACKUP_DIR:
+//   BACKUP_DIR/<name>       copy of the original file
+//   BACKUP_DIR/<name>.none  marker, there was no such file
+// romfs/startup.te puts everything back using the same layout.
+static const char *const BACKUP_DIR = "sdmc:/Haku33_backup";
+static const char *const BOOT_FILES[] = {"payload.bin", "boot.dat", "boot.ini"};
 
+static bool backup_boot_file(const string &name) {
+	const string src = string("sdmc:/") + name;
+	const string bak = string(BACKUP_DIR) + "/" + name;
+	const string none = bak + ".none";
+	// An earlier run that never got to restore already recorded the original
+	// state. The file on the SD may be ours by now, so keep that record.
+	if (IsExist(bak) || IsExist(none)) return true;
+	if (IsExist(src)) return copy_me(src, bak);
+	ofstream marker(none, ios::binary);
+	marker << "none";
+	marker.close();
+	return IsExist(none);
+}
+
+static void restore_boot_files() {
+	for (const char *name : BOOT_FILES) {
+		const string src = string("sdmc:/") + name;
+		const string bak = string(BACKUP_DIR) + "/" + name;
+		const string none = bak + ".none";
+		if (IsExist(bak)) {
+			if (copy_me(bak, src)) remove(bak.c_str());
+		} else if (IsExist(none)) {
+			remove(src.c_str());
+			remove(none.c_str());
+		}
+	}
+	rmdir(BACKUP_DIR);
+}
+
+// File of zeros that romfs/startup.te copies over the free space of SYSTEM and
+// USER after deleting, so the deleted data cannot be read back from a raw dump.
+static const char *const ZERO_DIR = "sdmc:/Haku33_zero";
+static const char *const ZERO_FILE = "sdmc:/Haku33_zero/zero.bin";
+static const size_t ZERO_FILE_MIB = 128;
+
+static void remove_zero_file() {
+	remove(ZERO_FILE);
+	rmdir(ZERO_DIR);
+}
+
+static bool write_zero_file() {
+	static u8 block[0x100000]; // zero initialized
+	mkdir(ZERO_DIR, 0777);
+	FILE *f = fopen(ZERO_FILE, "wb");
+	if (f == NULL) return false;
+	bool ok = true;
+	for (size_t i = 0; i < ZERO_FILE_MIB && ok; i++) ok = fwrite(block, 1, sizeof(block), f) == sizeof(block);
+	if (fclose(f) != 0) ok = false;
+	if (!ok) remove_zero_file();
+	return ok;
+}
+
+// ---- Free space overwrite, first pass, done here while Horizon is running.
+// TegraExplorer writes to the eMMC at about 2 MB/s, so overwriting the free
+// space of a 32 GB console from startup.te alone takes more than three hours.
+// Horizon writes much faster, so the free space SYSTEM and USER have now is
+// filled with zeros here, into the same Haku33_fill folder startup.te uses.
+// startup.te then deletes the data, overwrites only what that freed and the
+// margin left here, and removes the folder. A margin is left because Horizon
+// is still running. Only for the NAND Horizon is running from, so never when
+// running from emuMMC (the wipe target chosen later would be another NAND).
+struct FillTarget { FsBisPartitionId id; const char *dev; const char *label; };
+static const FillTarget FILL_TARGETS[] = {
+	{ FsBisPartitionId_System, "hsys", "SYSTEM" },
+	{ FsBisPartitionId_User,   "husr", "USER"   },
+};
+static const u64 FILL_MARGIN   = 64ULL << 20;   // left free on each partition
+static const u64 FILL_FILE_MAX = 1024ULL << 20; // per file, FAT32 allows just under 4 GiB
+static const size_t FILL_CHUNK = 4u << 20;      // per write
+
+static bool mount_bis(const FillTarget &t) {
+	FsFileSystem fs;
+	Result rc = fsOpenBisFileSystem(&fs, t.id, "");
+	if (R_FAILED(rc)) { hlog("%s: fsOpenBisFileSystem 0x%x", t.label, rc); return false; }
+	// fsdev owns fs from here, also when the mount fails.
+	if (fsdevMountDevice(t.dev, fs) == -1) { hlog("%s: mount failed", t.label); return false; }
+	return true;
+}
+
+// Removes every file in <dev>:/Haku33_fill and the folder. Returns the number of files removed.
+static int clear_fill_dir(const FillTarget &t) {
+	char dirpath[64], path[400];
+	snprintf(dirpath, sizeof(dirpath), "%s:/Haku33_fill", t.dev);
+	int n = 0;
+	DIR *d = opendir(dirpath);
+	if (d != NULL) {
+		// collect first: removing while reading a directory is not reliable
+		std::vector<std::string> names;
+		struct dirent *e;
+		while ((e = readdir(d)) != NULL) {
+			if (strcmp(e->d_name, ".") != 0 && strcmp(e->d_name, "..") != 0) names.push_back(e->d_name);
+		}
+		closedir(d);
+		for (const std::string &name : names) {
+			snprintf(path, sizeof(path), "%s/%s", dirpath, name.c_str());
+			if (remove(path) == 0) n++;
+		}
+		rmdir(dirpath);
+	}
+	return n;
+}
+
+// Removes what prefill_free_space() left, for when the wipe does not start.
+static void remove_prefill() {
+	for (const FillTarget &t : FILL_TARGETS) {
+		if (!mount_bis(t)) continue;
+		int n = clear_fill_dir(t);
+		if (n > 0) hlog("%s: removed %d overwrite file(s)", t.label, n);
+		fsdevUnmountDevice(t.dev);
+	}
+}
+
+// Writes one file of zeros through the filesystem service directly. The file
+// is created at its full size first, so the driver reserves the space once
+// instead of growing the file on every write.
+static bool fill_file(FsFileSystem *fs, const char *path, u64 size, const FillTarget &t, u64 total, u64 &todo, time_t t0) {
+	alignas(0x1000) static u8 block[FILL_CHUNK]; // zero initialized
+	Result rc = fsFsCreateFile(fs, path, (s64)size, 0);
+	if (R_FAILED(rc)) { hlog("%s: create %s (%llu MB) 0x%x", t.label, path, (unsigned long long)(size >> 20), rc); return false; }
+	FsFile f;
+	rc = fsFsOpenFile(fs, path, FsOpenMode_Write, &f);
+	if (R_FAILED(rc)) { hlog("%s: open %s 0x%x", t.label, path, rc); fsFsDeleteFile(fs, path); return false; }
+	u64 off = 0;
+	while (off < size) {
+		u64 n = size - off < FILL_CHUNK ? size - off : FILL_CHUNK;
+		rc = fsFileWrite(&f, (s64)off, block, n, FsWriteOption_None);
+		if (R_FAILED(rc)) { hlog("%s: write %s at %llu MB 0x%x", t.label, path, (unsigned long long)(off >> 20), rc); break; }
+		off += n; todo -= n;
+		if (((total - todo) & ((64ULL << 20) - 1)) == 0 || todo == 0) {
+			u64 mb = (total - todo) >> 20, el = (u64)(time(NULL) - t0);
+			printf("\r\x1b[K  %s: %llu / %llu MB", t.label, (unsigned long long)mb, (unsigned long long)(total >> 20));
+			if (el >= 5 && mb / el > 0) printf(", %llu MB/s, %llu min left", (unsigned long long)(mb / el), (unsigned long long)(((todo >> 20) / (mb / el) + 59) / 60));
+			consoleUpdate(NULL);
+		}
+	}
+	Result frc = fsFileFlush(&f);
+	fsFileClose(&f);
+	if (R_SUCCEEDED(rc) && R_FAILED(frc)) { hlog("%s: flush %s 0x%x", t.label, path, frc); rc = frc; }
+	// A file that was not written to its end still holds old data in the part
+	// that was only reserved: remove it, so startup.te overwrites that space.
+	if (R_FAILED(rc)) fsFsDeleteFile(fs, path);
+	return R_SUCCEEDED(rc);
+}
+
+static bool prefill_one(const FillTarget &t) {
+	if (!mount_bis(t)) return false;
+	char dirpath[64], path[96];
+	snprintf(dirpath, sizeof(dirpath), "%s:/Haku33_fill", t.dev);
+	int old = clear_fill_dir(t); // left by an interrupted run
+	if (old > 0) hlog("%s: removed %d leftover overwrite file(s)", t.label, old);
+	mkdir(dirpath, 0777);
+
+	FsFileSystem *fs = fsdevGetDeviceFileSystem(t.dev);
+	s64 free_bytes = 0;
+	Result rc = fsFsGetFreeSpace(fs, "/", &free_bytes);
+	if (R_FAILED(rc)) {
+		hlog("%s: fsFsGetFreeSpace 0x%x", t.label, rc);
+		rmdir(dirpath);
+		fsdevUnmountDevice(t.dev);
+		return false;
+	}
+	u64 todo = (u64)free_bytes > FILL_MARGIN ? (u64)free_bytes - FILL_MARGIN : 0;
+	const u64 total = todo;
+	bool ok = true;
+	time_t t0 = time(NULL);
+	for (int idx = 0; todo > 0 && ok; idx++) {
+		snprintf(path, sizeof(path), "/Haku33_fill/h%d", idx);
+		ok = fill_file(fs, path, todo < FILL_FILE_MAX ? todo : FILL_FILE_MAX, t, total, todo, t0);
+	}
+	printf("\n");
+	// startup.te only trusts the folder when this marker is in it. Without it
+	// (power lost part way, a failed write) it removes the folder and
+	// overwrites all of the free space itself.
+	if (ok) {
+		rc = fsFsCreateFile(fs, "/Haku33_fill/ok", 0, 0);
+		if (R_FAILED(rc)) { hlog("%s: marker 0x%x", t.label, rc); ok = false; }
+	}
+	u64 secs = (u64)(time(NULL) - t0);
+	u64 done_mb = (total - todo) >> 20;
+	hlog("%s: %llu MB free, wrote %llu MB of zeros in %llu s (%llu MB/s)%s", t.label,
+		(unsigned long long)((u64)free_bytes >> 20), (unsigned long long)done_mb, (unsigned long long)secs,
+		(unsigned long long)(secs ? done_mb / secs : done_mb), ok ? "" : ", stopped early by an error");
+	fsdevUnmountDevice(t.dev);
+	return ok;
+}
+
+static void prefill_free_space() {
+	if (is_emummc) { hlog("running from emuMMC: no overwrite from Horizon, startup.te does all of it"); return; }
+	printf(LG["STATUS3"]);
+	consoleUpdate(NULL);
+	appletSetAutoSleepDisabled(true); // this can take longer than the auto sleep time
+	for (const FillTarget &t : FILL_TARGETS) {
+		if (!prefill_one(t)) { printf(LG["WARNING5"], t.label); consoleUpdate(NULL); }
+	}
+}
+
+// Starts the TegraExplorer wipe (romfs/startup.te). On success the console
+// reboots or powers off and this does not return. Returns false, with the SD
+// left as it was, when the wipe could not be started.
+bool SetupClean (){
+    led_on(2);
+    hlog("TegraExplorer wipe: preparing the SD");
+    if (!copy_me("romfs:/startup.te", "sdmc:/startup.te")) {
+        hlog("could not copy startup.te to the SD, stopped");
+        printf(LG["ERROR3"]);
+        return false;
+    }
+    // Without this file the wipe still runs, startup.te then reports that the
+    // free space was not overwritten.
+    printf(LG["STATUS2"]);
+    consoleUpdate(NULL);
+    bool zero_ok = write_zero_file();
+    hlog("zero file for the free space overwrite: %s", zero_ok ? "written" : "FAILED, free space will not be overwritten");
+    if (!zero_ok) {
+        printf(LG["WARNING4"]);
+        consoleUpdate(NULL);
+    }
+    bool prefilled = false;
+	if (is_patched){
+		mkdir(BACKUP_DIR, 0777);
+		bool ok = true;
+		for (const char *name : BOOT_FILES) ok = backup_boot_file(name) && ok;
+
+		if (ok) {
+			//force boot sxcore
+			ok = copy_me("romfs:/boot.dat", "sdmc:/boot.dat") && ok;
+			ok = copy_me("romfs:/boot.ini", "sdmc:/boot.ini") && ok;
+
+			//force boot HWFLY PicoFly
+			ok = copy_me("romfs:/TegraExplorer.bin", "sdmc:/payload.bin") && ok;
+		}
+
+		hlog("patched console: boot files %s", ok ? "backed up and replaced" : "could NOT be prepared, restoring");
+		if (ok && zero_ok) { prefill_free_space(); prefilled = true; }
+		if (!ok) {
+			restore_boot_files();
+			remove_zero_file();
+			remove("sdmc:/startup.te");
+			printf(LG["ERROR3"]);
+			return false;
+		}
+
+		hlog("powering off, TegraExplorer starts at the next power on");
 		led_on(1);
 		spsmInitialize();
 		spsmShutdown(false);
+		return true;
 	}else{
         //Erista boot
 		led_on(1);
 		bpcInitialize();
-		if(init_slp()){reboot_to_payload("romfs:/TegraExplorer.bin");}
+		bool slp = init_slp();
+		// Not before the reboot is known to be possible: the files would stay behind.
+		if (slp && zero_ok) { prefill_free_space(); prefilled = true; }
+		hlog("rebooting to TegraExplorer");
+		if(slp){reboot_to_payload("romfs:/TegraExplorer.bin");}
 		bpcExit();
+		hlog("the reboot to TegraExplorer did not happen, wipe cancelled");
+		if (prefilled) remove_prefill();
+		// Only reached when the reboot did not happen: do not leave the wipe
+		// script armed on the SD.
+		remove_zero_file();
+		remove("sdmc:/startup.te");
+		printf(LG["ERROR4"]);
+		return false;
 	}
 }
 
-void NewClean(){
-    u64 uidsave = 0x8000000000000000;
-    AccountUid uid;
+enum NewCleanResult {
+	NewClean_Done = 0,    // index replaced, console is powering off
+	NewClean_NoAccess,    // the indexer save could not be opened, nothing changed
+	NewClean_Failed,      // error after opening, nothing was committed
+};
+
+// 17.0.0+: reset the save data index from inside Horizon.
+// The new index is made of the console's own records for 8000000000000120
+// and 8000000000000053 (see imkvdb.hpp), the same result romfs/startup.te
+// produces, instead of a canned file with a fixed size and no 0053 record.
+NewCleanResult NewClean(){
+    const u64 uidsave = 0x8000000000000000;
+    AccountUid uid = {};
     FsFileSystem dataW;
 
-    if(R_SUCCEEDED(fsOpen_SystemSaveData (&dataW,FsSaveDataSpaceId_System,uidsave,uid))) {
-        fsdevMountDevice("bro", dataW);
-        copy_me("romfs:/imkvdb.arc", "bro:/imkvdb.arc");
-        fsdevCommitDevice("bro");
-        fsdevUnmountDevice("bro");
-        cout << "Data Cleared... " << uidsave <<std::endl;
-        /*
-        
-        save file index to save 
-        */
-        
-    }else{
-        cout << "Data not Cleared... " <<std::endl;
-        SetupClean();
+    Result rc = fsOpen_SystemSaveData (&dataW,FsSaveDataSpaceId_System,uidsave,uid);
+    hlog("index reset (A): fsOpen_SystemSaveData 0x%x", rc);
+    if(R_FAILED(rc)) {
+        printf("fsOpen_SystemSaveData() 0x%x\n", rc);
+        return NewClean_NoAccess;
     }
-	fsFsClose(&dataW);
+
+    // fsdev owns dataW from here, also when the mount fails.
+    if (fsdevMountDevice("bro", dataW) == -1) {
+        hlog("index reset failed at: mount");
+        printf(LG["ERROR5"], "mount");
+        return NewClean_Failed;
+    }
+
+    std::vector<u8> oldIndex, newIndex;
+    const char *failed = NULL;
+    if (!read_file("bro:/imkvdb.arc", oldIndex)) failed = "read";
+    else if (!imkvdb::BuildCleanIndex(oldIndex, newIndex)) failed = "parse";
+    else if (!write_file("bro:/imkvdb.arc", newIndex)) failed = "write";
+    else if (R_FAILED(rc = fsdevCommitDevice("bro"))) failed = "commit";
+
+    // Closes the save. Anything written but not committed is discarded.
+    fsdevUnmountDevice("bro");
+
+    if (failed != NULL) {
+        hlog("index reset failed at: %s (0x%x), nothing was committed", failed, rc);
+        printf(LG["ERROR5"], failed);
+        return NewClean_Failed;
+    }
+    hlog("index reset committed (%u -> %u bytes), powering off", (unsigned)oldIndex.size(), (unsigned)newIndex.size());
+
     led_on(1);
 	spsmInitialize();
 	spsmShutdown(false);
+    return NewClean_Done;
+}
 
+// The TegraExplorer wipe needs /switch/prod.keys on patched consoles
+// (TegraExplorer cannot derive keys there).
+void StartTegraWipe(bool keysok){
+    if (is_patched && !keysok){
+        hlog("TegraExplorer wipe refused: patched console without /switch/prod.keys");
+        printf(LG["ERROR1"]);
+        return;
+    }
+    SetupClean();
 }
 
 
@@ -223,20 +523,21 @@ int main(int argc, char **argv)
 	set_LANG();
 	romfsInit();
 	consoleInit(NULL);
-	Init_Services();
+	Result init_rc = Init_Services();
 	CheckHardware();
 	PadState pad;
 	padConfigureInput(8, HidNpadStyleSet_NpadStandard);
     padInitializeDefault(&pad);
     bool keysok = IsExist("/switch/prod.keys");
-    bool sure = false;
+    int armed = 0; // 0: nothing, 1: A (clean), 2: X/Y (TegraExplorer wipe)
     Result rc = 0;
 	SetSysFirmwareVersion ver;
-	if (R_FAILED(rc = setsysGetFirmwareVersion(&ver))) {
-		printf("setsysGetFirmwareVersion() Failied: 0x%x.\n\n", rc);
-	} else {
+	if (R_SUCCEEDED(rc = setsysGetFirmwareVersion(&ver))) {
 		verM = (int)ver.major;
 	}
+    hlog("---- %s v%s started: firmware %s (0x%x), hardware %s, patched %d, emummc %d, prod.keys %d, services 0x%x",
+        TITLE, VERSION, R_SUCCEEDED(rc) ? ver.display_version : "unknown", rc, spl::GetHardwareType(),
+        (int)is_patched, (int)is_emummc, (int)keysok, init_rc);
     //main menu
     consoleClear();
     printf("\x1b[32;1m*\x1b[0m %s v%s Kronos2308, Hard Reset \n\n",TITLE, VERSION);
@@ -244,78 +545,63 @@ int main(int argc, char **argv)
     printf(LG["WARNING2"]);
     printf(LG["WARNING3"]);
     printf(LG["MESSAGE1"]);
+    if (R_FAILED(init_rc)) {
+        printf("Init_Services() Failed: 0x%x.\n\n", init_rc);
+    }
+    if (R_FAILED(rc)) {
+        printf("setsysGetFirmwareVersion() Failed: 0x%x.\n\n", rc);
+    }
     if (is_patched){
         printf("\n\n %s",LG["INFO0"]);
-    } 
-    printf("\n\x1b[31;1m%s \x1b[0m ",Logs);
-    if (!keysok){
+    }
+    if (is_emummc){
+        printf(LG["INFO1"]);
+    }
+    if (is_patched && !keysok){
         printf(LG["ERROR1"]);
     }
     printf(LG["PROMPT1"]);
+    printf(LG["PROMPT2"]);
 
 	//keys
 	while (appletMainLoop())
 	{
-	    //hidScanInput();
 		padUpdate(&pad);
         u64 kDown = padGetButtonsDown(&pad);
-        u64 kHeld = padGetButtons(&pad);
 
-		
-		u32 minus = 0;
-		u32 more = 0;
-		u32 LT = 0;
-		u32 RT = 0;
-	
-		if (kHeld & KEY_ZL)
-			LT = 4;
-		if (kHeld & KEY_ZR)
-			RT = 4;
-		if (kHeld & KEY_MINUS)
-			minus = 4;
-		if (kHeld & KEY_PLUS)
-			more = 4;
+		int pressed = 0;
+		if (kDown & KEY_A) pressed = 1;
+		else if (kDown & (KEY_X | KEY_Y)) pressed = 2;
 
-		if (kHeld & KEY_ZL && kHeld & KEY_ZR && kHeld & KEY_MINUS && kHeld & KEY_PLUS)
-		{
-			minus = 2;
-			more = 2;
-			LT = 2;
-			RT = 2;
+		if (pressed != 0 && pressed != armed){
+			//first press only asks, and asks once
+			armed = pressed;
+			hlog("%s pressed once, asking to confirm", pressed == 1 ? "A" : "X/Y");
+			printf(LG["CONFIRM1"]);
 		}
-        if (sure){
-            printf(LG["CONFIRM1"]);
-        }
+		else if (pressed == 1){
+			armed = 0;
+			hlog("A confirmed");
+			if (verM >= 17){
+				if (is_emummc){
+					//this would edit the emuMMC index, not sysNAND
+					hlog("A refused: running on emuMMC");
+					printf(LG["INFO1"]);
+				} else if (NewClean() == NewClean_NoAccess){
+					StartTegraWipe(keysok);
+				}
+			} else {
+				StartTegraWipe(keysok);
+			}
+		}
+		else if (pressed == 2){
+			armed = 0;
+			hlog("X/Y confirmed");
+			StartTegraWipe(keysok);
+		}
+
         consoleUpdate(NULL);
 
-        
-		if (kDown & KEY_Y || kDown & KEY_X){
-            SetupClean();
-        }
-
-		//call clean after combo
-		if (kDown & KEY_A)
-		{
-/*
-            if (is_patched){
-                if (keysok){
-                    SetupClean();
-                }
-			} else SetupClean();
-            
-    */
-            if (sure && keysok){
-                if (verM >= 17){
-                    NewClean();
-                } else {
-                    SetupClean();
-                }
-            }
-            sure = true;
-            
-			//break;
-		}
-		
 		//exit
 		if (kDown & KEY_B)
 		{
