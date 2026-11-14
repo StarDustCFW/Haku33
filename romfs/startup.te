@@ -100,6 +100,61 @@ unfill={
 # partitions; a retry started from here then overwrites everything itself.
 pe={unfill() restore() pause() exit()}
 
+# The save folder of SYSTEM keeps the names of deleted saves in its directory
+# entries. To get rid of them the saves that are kept are moved to a new folder,
+# the old folder is deleted (fill() then overwrites it) and the new one takes
+# its name. If that is interrupted the kept saves are in bis:/Haku33_save and
+# the console cannot use them: saveback() puts them back, it runs at the start
+# of every run, before anything else looks at bis:/save.
+sn="bis:/Haku33_save"
+so="bis:/save"
+namesleft=0
+saveback={
+	if(fsexists(sn)){
+		lm="saves are in "+sn+", putting them back" log()
+		if(!fsexists(so)){
+			lr=movefile(sn,so) ls="rename "+sn+" to "+so logr()
+		}.else(){
+			sb=0
+			while(sb<3){
+				if(fsexists(sn+"/"+is[sb])){
+					# a move is a rename, so a save cannot be in both folders; if it is, leave both alone
+					if(fsexists(so+"/"+is[sb])){lm="in both folders, left alone: "+is[sb] log()}.else(){lr=movefile(sn+"/"+is[sb],so+"/"+is[sb]) ls="move back "+is[sb] logr()}
+				}
+				sb=sb+1
+			}
+			lr=delfile(sn) ls="remove "+sn logr()
+		}
+	}
+}
+newsavedir={
+	saveback()
+	nf=0
+	if(mkdir(sn)){nf=1}
+	si=0
+	while((si<3)&&(nf==0)){
+		if(fsexists(so+"/"+is[si])){if(movefile(so+"/"+is[si],sn+"/"+is[si])){nf=1}}
+		si=si+1
+	}
+	if(nf==0){
+		# nothing may be left in the old folder
+		sl=readdir(so)
+		if((sl.files.len()!=0)||(sl.folders.len()!=0)){nf=1}
+	}
+	if(nf==0){
+		if(deldir(so)){nf=1}.else(){
+			lr=movefile(sn,so) ls="save folder rebuilt, rename to "+so logr()
+			if(lr){p("\nCould not rename",sn,"to",so,"- run the wipe again")pe()}
+		}
+	}
+	if(nf){
+		saveback()
+		namesleft=1
+		lm="save folder NOT rebuilt, names of deleted saves stay" log()
+		pr(" failed, the names of deleted saves stay")
+	}
+}
+
 # the user backed out before anything was deleted: leave nothing armed on the sd
 abort={unfill() restore() dropzero() delfile("sd:/startup.te") exit()}
 p("System wiper\n")
@@ -120,6 +175,7 @@ if(r==2){
 }
 if(mount("SYSTEM")){lm="mount SYSTEM failed" log()p("Mount failed!")pe()}
 lm="mounted SYSTEM" log()
+saveback()
 clear()
 
 border = {
@@ -314,6 +370,9 @@ if(fsexists("bis:/save/"+is[0]))
 	pr("120 save not found!!! Skip editing indexer save!!!")
 }
 
+pr("\nRebuilding the SYSTEM save folder...")
+newsavedir()
+
 # SYSTEM keeps a saveMeta folder of its own
 if(fsexists("bis:/saveMeta")){
 	pr("\nDeleting SYSTEM saveMeta...")
@@ -362,8 +421,10 @@ delfile("sd:/Switch/Haku33/Haku33.nro")
 dropzero()
 restore()
 lr=notfilled ls="finished, overwrite skipped (1 = yes)" logr()
+lr=namesleft ls="names of deleted saves left in the SYSTEM save folder (1 = yes)" logr()
 
 p("\n\nDone!")
+if(namesleft){p("The names of deleted saves are still in the SYSTEM save folder.")}
 if(notfilled){
 	color(0xFF0000)
 	p("Free space was NOT overwritten: deleted data can still be read from a raw dump.")
