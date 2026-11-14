@@ -356,6 +356,37 @@ if(fsexists("bis:/save/"+is[0]))
 	idb.addrange(ba0)
 
 	idxs=readsave("bis:/save/"+is[2])
+	# The old index (accounts, games) is overwritten before the file is made
+	# smaller, otherwise it stays readable in the save: behind the new records
+	# in the first block, and in the blocks that are given back.
+	# Limits of TegraExplorer 4.2.0's save code, found on a PC with copies of
+	# real saves: a write of more than 16384 zero bytes damages the save, the
+	# same write with 0xFF does not, and growing a file by a block is not safe.
+	# So: round the size up to whole blocks (no new block is needed for that),
+	# fill everything with 0xFF, then zero the first block.
+	oi=idxs.read("/imkvdb.arc")
+	ol=oi.len()
+	oi=0
+	ib=(ol+16383)/16384
+	lr=ol ls="old index size" logr()
+	if(ib>0){
+		fb=["BYTE[]",0xFF].copy()
+		zb=["BYTE[]",0x00].copy()
+		ik=0
+		while(ik<14){
+			ft=fb.copy() fb.addrange(ft)
+			zt=zb.copy() zb.addrange(zt)
+			ik=ik+1
+		}
+		fa=fb.copy()
+		ik=1
+		while(ik<ib){fa.addrange(fb) ik=ik+1}
+		if(idxs.resize("/imkvdb.arc",ib*16384)){p("imkvdb resize to whole blocks failed")pe()}
+		if(idxs.write("/imkvdb.arc",fa)){p("imkvdb overwrite failed")pe()}
+		if(idxs.write("/imkvdb.arc",zb)){p("imkvdb zero failed")pe()}
+		fa=0
+		lm="old index overwritten" log()
+	}
 	if(idxs.resize("/imkvdb.arc",idb.len())){p("imkvdb resize failed")pe()}
 	if(idxs.write("/imkvdb.arc",idb)){p("imkvdb write failed")pe()}
 	if(idxs.resize("/lastPublishedId",ba0.len())){p("lastPublishedId resize failed")pe()}
